@@ -63,7 +63,7 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 	return err
 }
 
-func WriteIndex(branch *object.Commit, repositoryName string, branchDir string, branchName string, treePrefix string) error {
+func WriteIndex(branch *object.Commit, repository *git.Repository, repositoryName string, branchDir string, branchName string, treePrefix string) error {
 	var branchBuffer bytes.Buffer
 	branchPath := filepath.Join(branchDir, "index.html")
 
@@ -78,7 +78,12 @@ func WriteIndex(branch *object.Commit, repositoryName string, branchDir string, 
 			Branch: branchName,
 		},
 	}
-	err := generateIndex(branch, treePrefix, branchBase, &branchBuffer)
+	submoduleMap, err := submoduleNameUrlMap(repository)
+	if err != nil {
+		return err
+	}
+
+	err = generateIndex(branch, submoduleMap, treePrefix, branchBase, &branchBuffer)
 	if err != nil {
 		return err
 	}
@@ -156,6 +161,10 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 	}
 	walker := object.NewTreeWalker(tree, true, nil)
 	defer walker.Close()
+	submoduleMap, err := submoduleNameUrlMap(repository)
+	if err != nil {
+		return err
+	}
 	threadGroup := new(errgroup.Group)
 	for {
 		name, entry, err := walker.Next()
@@ -195,7 +204,7 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 					},
 				}
 
-				err = generateTree(subTree, treeName, treeBase, &treeBuffer)
+				err = generateTree(subTree, submoduleMap, treeName, treeBase, &treeBuffer)
 				if err != nil {
 					return err
 				}
@@ -261,7 +270,7 @@ func WriteBranch(branch *plumbing.Reference, repository *git.Repository, reposit
 		return err
 	}
 
-	err = WriteIndex(commit, repositoryName, branchDir, branchName, treePrefix)
+	err = WriteIndex(commit, repository, repositoryName, branchDir, branchName, treePrefix)
 	if err != nil {
 		return err
 	}

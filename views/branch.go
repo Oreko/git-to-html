@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -79,7 +80,7 @@ var refFuncMap = template.FuncMap{
 	},
 }
 
-func (data *TreeData) fromTree(tree *object.Tree) error {
+func (data *TreeData) fromTreeAndSubmodules(tree *object.Tree, submoduleMap map[string]string) error {
 	data.Tree = make(map[string]File, 0)
 
 	for _, entry := range tree.Entries {
@@ -121,7 +122,7 @@ func (data *TreeData) fromTree(tree *object.Tree) error {
 				prettySize = fmt.Sprintf("%dL", len(lines))
 			}
 		} else if mode == filemode.Submodule {
-			link = "test" // TODO
+			link = submoduleMap[name]
 		}
 
 		data.Tree[name] = File{
@@ -183,9 +184,26 @@ func (data *LogData) fromBranchAndRefs(top *object.Commit, refs map[plumbing.Has
 	})
 }
 
-func generateTree(subTree *object.Tree, treeName string, base BaseData, buffer *bytes.Buffer) error {
+func submoduleNameUrlMap(repository *git.Repository) (map[string]string, error) {
+	var mapping map[string]string = make(map[string]string)
+	wt, err := repository.Worktree()
+	if err != nil {
+		return mapping, err
+	}
+	submodules, err := wt.Submodules()
+	if err != nil {
+		return mapping, err
+	}
+	for _, submodule := range submodules {
+		config := submodule.Config()
+		mapping[config.Path] = config.URL
+	}
+	return mapping, nil
+}
+
+func generateTree(subTree *object.Tree, submoduleMap map[string]string, treeName string, base BaseData, buffer *bytes.Buffer) error {
 	var treeData TreeData
-	err := treeData.fromTree(subTree)
+	err := treeData.fromTreeAndSubmodules(subTree, submoduleMap)
 	if err != nil {
 		return err
 	}
@@ -243,13 +261,13 @@ func generateBlob(file *object.File, base BaseData, buffer *bytes.Buffer) error 
 	return err
 }
 
-func generateIndex(branch *object.Commit, treePrefix string, base BaseData, buffer *bytes.Buffer) error {
+func generateIndex(branch *object.Commit, submoduleMap map[string]string, treePrefix string, base BaseData, buffer *bytes.Buffer) error {
 	var treeData TreeData
 	tree, err := branch.Tree()
 	if err != nil {
 		return err
 	}
-	err = treeData.fromTree(tree)
+	err = treeData.fromTreeAndSubmodules(tree, submoduleMap)
 	if err != nil {
 		return err
 	}
