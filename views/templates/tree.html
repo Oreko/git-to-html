@@ -1,0 +1,40 @@
+{{ define "tree" }}
+{{- $treename := .TreeName -}}
+<div class="tree">
+  <table class="striped">
+    <thead>
+      <tr class="nohover">
+	<th>Name</th>
+	<th>Size</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{- range $filename, $file := .Tree }}
+      {{- if eq $file.Mode Submodule }}
+      <tr class="submodule">
+	<td>
+	  <a href="{{ $file.Link }}">{{- $filename -}}</a>
+	</td>
+	<td>
+	</td>
+      </tr>
+      {{ else }}
+      <tr class="file">
+	<td>
+	  <a href="{{- printf "%s/%s" $treename $filename -}}.html">{{ $filename }}</a>
+	</td>
+	{{- if eq $file.Mode Dir Symlink }}
+	<td>
+	</td>
+	{{- else -}}
+	<td class="number">
+	  {{ $file.Size }}
+	</td>
+	{{ end -}}
+      </tr>
+      {{ end -}}
+      {{ end -}}
+    </tbody>
+  </table>
+</div>
+{{ end }}

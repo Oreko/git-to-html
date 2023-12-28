@@ -1,0 +1,6 @@
+/gomod2nix-template
+*~
+\#.*
+.\#.*
+public/
+git-to-html

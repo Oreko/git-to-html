@@ -1,0 +1,18 @@
+{{ define "blob" }}
+<div class="blob">
+  {{ if .IsBinary }}
+  Binary file ommitted
+  {{ else }}
+  <table class="src">
+    {{- range .Lines }}
+    <tr>
+      <td class="linenums"></td>
+      <td class="lines">
+<pre><code>{{ . }}</code></pre>
+      </td>
+    </tr>
+    {{ end }}
+  </table>
+  {{ end }}
+</div>
+{{ end }}

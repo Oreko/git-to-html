@@ -1,0 +1,125 @@
+div.content {
+    padding: 2em;
+}
+
+.branchType {
+    color: cyan;
+}
+
+.noteType {
+    color: blue;
+}
+
+.remoteType {
+    color: red;
+}
+
+.tagType {
+    color: orange;
+}
+
+.symbolicType {
+    color: green;
+}
+
+.invalidType {
+    color: black;
+}
+
+.diff0 {
+    font-weight: normal;
+}
+
+.diff1 {
+    font-weight: bold;
+}
+
+.diff2 {
+    color: cyan;
+}
+
+.diff3 {
+    color: red;
+}
+
+.diff4 {
+    color: green;
+}
+
+table.stat td.deletion {
+    color: red;
+}
+
+table.stat td.addition {
+    color: green;
+}
+
+table.striped {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table.striped tr:nth-child(odd) {
+    background-color: whitesmoke;
+}
+
+table.striped tr:hover {
+    background: #eee;
+}
+
+table.striped th {
+    text-align: left;
+}
+
+table.striped tr.nohover{
+    background-color: white;
+}
+
+table.striped tr.nohover:hover{
+    background-color: white;
+}
+
+div.blob {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+table.src {
+    counter-reset: lineNumber;
+    border-radius: 6px;
+    border-style: solid;
+    border-width: 1px;
+}
+
+table.src td {
+    padding: 0;
+}
+
+table.src td.lines {
+    line-height: 20px;
+}
+
+table.src td.lines pre {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+table.src td.linenums {
+    line-height: 20px;
+    min-width: 50px;
+    position: relative;
+    width: 1%;
+    text-align: right;
+    white-space: nowrap;
+    vertical-align: top;
+    padding-right: 10px;
+}
+
+table.src td.linenums::before {
+    counter-increment: lineNumber;
+    content: counter(lineNumber);
+    font-family: monospace;
+    text-align: right;
+    white-space: nowrap;
+    vertical-align: top;
+}

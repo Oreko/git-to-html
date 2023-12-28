@@ -1,0 +1,34 @@
+{{ define "content" }}
+<div class="content">
+  <table id="commits" class="striped">
+    <thead>
+      <tr class="nohover">
+	<td>Date</td>
+	<td>Message</td>
+	<td>Author</td>
+	<td>Ref</td>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range .Log.Commits }}
+      <tr class="commit">
+	<td class="date">
+	  {{ .Date.Format "January 02, 2006" }}
+	</td>
+	<td>
+	  <a href="{{ printf "../c/%s.html" .Hash }}">{{- printf "%.*s" 50 .Message -}}</a>
+	</td>
+	<td>
+	  {{ .Author }}
+	</td>
+	<td>
+	  {{ range .Refs }}
+	  <span class={{ RefEnumToString .Type }}>{{ .Name }}</span>
+	  {{ end -}}
+	</td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
+{{ end }}
