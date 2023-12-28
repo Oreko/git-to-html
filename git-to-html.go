@@ -21,10 +21,10 @@ func checkIfError(err error) {
 }
 
 func main() {
-	if len(os.Args) != 2 {
+	if len(os.Args) != 3 {
 		execPath, err := os.Executable()
 		checkIfError(err)
-		fmt.Printf("Usage: %s repository_path\n", filepath.Base(execPath))
+		fmt.Printf("Usage: %s repository_path repository_name\n", filepath.Base(execPath))
 		os.Exit(1)
 	}
 
@@ -36,18 +36,20 @@ func main() {
 	err = os.MkdirAll(baseDir, 0755)
 	checkIfError(err)
 
-	err = views.WriteCommits(repository, baseDir)
+	repositoryName := os.Args[2]
+
+	err = views.WriteCommits(repository, repositoryName, baseDir)
 	checkIfError(err)
 
 	branchIter, err := repository.Branches()
 	checkIfError(err)
 	defer branchIter.Close()
 	err = branchIter.ForEach(func(branch *plumbing.Reference) error {
-		return views.WriteBranch(branch, repository, baseDir)
+		return views.WriteBranch(branch, repository, repositoryName, baseDir)
 	})
 	checkIfError(err)
 
-	err = views.WriteRefs(repository, baseDir)
+	err = views.WriteRefs(repository, repositoryName, baseDir)
 	checkIfError(err)
 
 	os.Exit(0)
