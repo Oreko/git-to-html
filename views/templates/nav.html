@@ -1,24 +1,11 @@
 {{ define "nav" }}
-<div class="navlist">
-  <table class="tabs">
-  <tr>
-    <td>
-      <a href="{{ .Root }}refs.html">refs</a>
-    </td>
-    {{ if .Branch }}
-    <td>
-      <a href="{{ .Root }}{{ .Branch }}/log.html">log</a>
-    </td>
-    <td>
-      <a href="{{ .Root }}{{ .Branch }}/index.html">tree</a>
-    </td>
-    {{ end }}
-    {{- if .Commit -}}
-    <td>
-      <a href="{{ .Root }}c/{{ .Commit }}.html">commit</a>
-    </td>
-    {{- end }}
-  </tr>
-</table>
-</div>
+<ul class="nav-list">
+{{ if .Nav.Branch -}}
+<li><a href="{{ .Root }}{{ .Nav.Branch }}/log.html">Branch Log</a></li>
+<li><a href="{{ .Root }}{{ .Nav.Branch }}/index.html">Branch Tree</a></li>
+{{- end }}
+{{ if .Nav.Commit -}}
+<li><a href="{{ .Root }}c/{{ .Nav.Commit }}.html">Most Recent Commit</a></li>
+{{- end }}
+</ul>
 {{ end }}

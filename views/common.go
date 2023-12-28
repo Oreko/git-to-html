@@ -21,12 +21,13 @@ var templates embed.FS
 
 type BaseData struct {
 	Title     string
+	Home      string
 	StylePath string
 	Nav       NavData
+	Root      string
 }
 
 type NavData struct {
-	Root   string
 	Commit string
 	Branch string
 }

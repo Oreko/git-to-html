@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
@@ -69,6 +70,22 @@ func (data *CommitData) fromCommit(commit *object.Commit) error {
 	data.Lines = makeDiff(patch)
 
 	return nil
+}
+
+func latestCommitHash(path *string, repository *git.Repository) (plumbing.Hash, error) {
+	var hash plumbing.Hash
+	cIter, err := repository.Log(&git.LogOptions{
+		Order:    git.LogOrderCommitterTime,
+		FileName: path,
+	})
+	if err != nil {
+		return hash, err
+	}
+	commit, err := cIter.Next()
+	if err != nil {
+		return hash, err
+	}
+	return commit.Hash, nil
 }
 
 func generateCommit(commit *object.Commit, base BaseData, buffer *bytes.Buffer) error {

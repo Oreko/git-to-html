@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-Clacks-Overhead" content="GNU Terry Pratchett" >
+    <meta charset="utf-8" >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" >
     <title>{{with .Title}} {{- . -}} {{ else }} Empty Title {{ end }}</title>
+    <meta name="referrer" content="no-referrer" >
     <!-- styles -->
     <link rel="stylesheet" href="{{- .StylePath -}}/static/styles.css">
   </head>
   <body>
+    <a href="{{ .Root }}refs.html" rel="noreferrer" class="title"><h1>{{ .Home }}</h1></a>
     <!-- navbar -->
-    <nav class="navbar">
-      <div class="container">
-        {{- template "nav" .Nav -}}
-      </div>
+    <nav>
+      {{- template "nav" . -}}
     </nav>
     <!-- content -->
     <section class="content">

@@ -243,7 +243,7 @@ func generateBlob(file *object.File, base BaseData, buffer *bytes.Buffer) error 
 	return err
 }
 
-func generateBranch(branch *object.Commit, treePrefix string, base BaseData, buffer *bytes.Buffer) error {
+func generateIndex(branch *object.Commit, treePrefix string, base BaseData, buffer *bytes.Buffer) error {
 	var treeData TreeData
 	tree, err := branch.Tree()
 	if err != nil {

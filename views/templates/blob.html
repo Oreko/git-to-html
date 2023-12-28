@@ -3,6 +3,11 @@
   {{ if .IsBinary }}
   Binary file ommitted
   {{ else }}
+  {{ with .Markdown}}
+  <article class="markdown">
+      {{ . }}
+  </article>
+  {{ end }}
   <table class="src">
     {{- range .Lines }}
     <tr>

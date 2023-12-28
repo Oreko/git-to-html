@@ -1,3 +1,157 @@
+:root {
+    --main-bg-gradient1: #ffccab;
+    --main-bg-gradient2: #ffffee;
+    --main-text-color: #800043;
+    --main-link-unvisited-color: #880000;
+    --main-link-visited-color: #0000ee;
+    --main-link-hover-color: #DD0000;
+    --main-table-border-color:#c9d1d9;
+}
+
+@media screen and (max-width: 500px) {
+  html {
+    font-size: 90%;
+  }
+}
+
+@media screen and (min-width: 1024px) {
+  html {
+    font-size: 110%;
+  }
+}
+
+@media screen and (min-width: 2048px) {
+  html {
+    font-size: 120%;
+  }
+}
+
+body {
+    background-image: linear-gradient(var(--main-bg-gradient1), var(--main-bg-gradient2));
+    background-color: var(--main-bg-gradient2);
+    background-size: 100% 700px;
+    background-repeat: repeat-x;
+    color: var(--main-text-color);
+    font-family: Verdana, sans-serif;
+    line-height: 1.5;
+    margin: 0 auto;
+    max-width: 40rem;
+    min-height: 100vh;
+    overflow-wrap: break-word;
+    padding: 0 1rem;
+    text-align: left;
+    word-wrap: break-word;
+}
+
+main {
+    padding-bottom: 2.5rem;
+}
+
+footer {
+    text-align: center;
+    width: 100%;
+}
+
+img,
+picture,
+video {
+    height: auto;
+    max-width: 100%;
+}
+
+img {
+    object-fit: contain;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+strong,
+b {
+    color: var(--main-text-color);
+}
+
+h1 {
+    font-weight: 600;
+    line-height: 1.1;
+    margin-bottom: 0;
+}
+
+.title {
+    text-decoration: none;
+    border: 0;
+}
+
+.title h1 {
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+h2 {
+    line-height: 1.2;
+    margin-top: 1.4rem;
+}
+
+hr {
+    border-style: dotted none none;
+    border-width: 2px;
+}
+
+a {
+    color: var(--main-link-unvisited-color);
+}
+
+a.external {
+    text-decoration: none;
+    border-bottom: 1px dotted var(--main-link-unvisited-color);
+}
+
+nav a {
+    margin-right: 10px;
+}
+
+a:not(nav a):visited {
+    color: var(--main-link-visited-color);
+}
+
+a:not(nav a):visited.external {
+    text-decoration: none;
+    border-bottom: 1px dotted var(--main-link-unvisited-color);
+}
+
+a:not(nav a):hover {
+    color: var(--main-link-hover-color);
+}
+
+ul.nav-list, ul.post-tags, ul.post-categories {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: inline-flex;
+    flex-wrap: wrap;
+}
+
+table,
+th,
+td {
+    border: none;
+    padding: 5px;
+}
+
+table {
+    width: 100%;
+}
+
+blockquote {
+    border-left: 1px solid #999;
+    color: #ccc;
+    padding-left: 20px;
+    font-style: italic;
+}
+
 div.content {
     padding: 2em;
 }

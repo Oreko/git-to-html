@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
@@ -80,6 +81,18 @@ func (data *TagData) fromReference(ref *plumbing.Reference) {
 	data.Head = ""
 	data.Tagger = ""
 	data.Date = time.Time{}
+}
+
+func (data *TagData) fromRefSwitch(tag *plumbing.Reference, repo *git.Repository) error {
+	obj, err := repo.TagObject(tag.Hash())
+	switch err {
+	case nil:
+		data.fromTag(obj)
+	case plumbing.ErrObjectNotFound:
+		data.fromReference(tag)
+		err = nil
+	}
+	return err
 }
 
 func generateRefs(branches *[]string, tags *[]TagData, data BaseData, buffer *bytes.Buffer) error {

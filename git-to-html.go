@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 
 	"github.com/oreko/git-to-html/views"
 )
@@ -38,7 +39,12 @@ func main() {
 	err = views.WriteCommits(repository, baseDir)
 	checkIfError(err)
 
-	err = views.WriteBranches(repository, baseDir)
+	branchIter, err := repository.Branches()
+	checkIfError(err)
+	defer branchIter.Close()
+	err = branchIter.ForEach(func(branch *plumbing.Reference) error {
+		return views.WriteBranch(branch, repository, baseDir)
+	})
 	checkIfError(err)
 
 	err = views.WriteRefs(repository, baseDir)

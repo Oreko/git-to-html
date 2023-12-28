@@ -40,9 +40,11 @@ func WriteCommits(repository *git.Repository, baseDir string) error {
 			commitBase := BaseData{
 				Title:     fmt.Sprintf("%s", commit.Hash),
 				StylePath: root + "..",
+				Home:      "My Repository",
+				Root:      root,
 				Nav: NavData{
-					Root:   root,
 					Commit: "",
+					Branch: "",
 				},
 			}
 			// TODO: Need to handle notes (see refs in other sections)
@@ -61,203 +63,220 @@ func WriteCommits(repository *git.Repository, baseDir string) error {
 	return err
 }
 
-// TODO: Function is doing too much. Candidate for splitting.
-func WriteBranches(repository *git.Repository, baseDir string) error {
-	const treePrefix = "t"
-	branchIter, err := repository.Branches()
+func WriteIndex(branch *object.Commit, branchDir string, branchName string, treePrefix string) error {
+	var branchBuffer bytes.Buffer
+	branchPath := filepath.Join(branchDir, "index.html")
+
+	root := relRootFromPath(branchPath)
+	branchBase := BaseData{
+		Title:     branchName,
+		StylePath: root + "..",
+		Home:      "My Repository",
+		Root:      root,
+		Nav: NavData{
+			Commit: "",
+			Branch: branchName,
+		},
+	}
+	err := generateIndex(branch, treePrefix, branchBase, &branchBuffer)
 	if err != nil {
 		return err
 	}
-	defer branchIter.Close()
+	err = writeHtml(&branchBuffer, branchPath)
+	if err != nil {
+		return err
+	}
 
-	threadGroup := new(errgroup.Group)
-	err = branchIter.ForEach(func(branch *plumbing.Reference) error {
-		branchName := filepath.Base(string(branch.Name()))
-		branchDir := filepath.Join(baseDir, branchName)
-		treeDir := filepath.Join(branchDir, treePrefix)
-		err = os.MkdirAll(treeDir, 0755)
-		if err != nil {
-			return err
-		}
+	return nil
+}
 
-		commit, err := repository.CommitObject(branch.Hash())
-		if err != nil {
-			return err
-		}
+func WriteLog(branch *object.Commit, repository *git.Repository, hash plumbing.Hash, branchDir string, branchName string) error {
+	var logBuffer bytes.Buffer
+	logPath := filepath.Join(branchDir, "log.html")
+	root := relRootFromPath(logPath)
+	logBase := BaseData{
+		Title:     fmt.Sprintf("%s - log", branchName),
+		StylePath: root + "..",
+		Home:      "My Repository",
+		Root:      root,
+		Nav: NavData{
+			Commit: fmt.Sprintf("%s", hash),
+			Branch: branchName,
+		},
+	}
 
-		// Generate the branch's index
-		var branchBuffer bytes.Buffer
-		branchPath := filepath.Join(branchDir, "index.html")
-		if err != nil {
-			return err
-		}
-
-		root := relRootFromPath(branchPath)
-		branchBase := BaseData{
-			Title:     branchName,
-			StylePath: root + "..",
-			Nav: NavData{
-				Root:   root,
-				Commit: "",
-				Branch: branchName,
-			},
-		}
-		err = generateBranch(commit, treePrefix, branchBase, &branchBuffer)
-		if err != nil {
-			return err
-		}
-		err = writeHtml(&branchBuffer, branchPath)
-		if err != nil {
-			return err
-		}
-
-		// Generate the branch's log
-		var logBuffer bytes.Buffer
-		logPath := filepath.Join(branchDir, "log.html")
-		root = relRootFromPath(logPath)
-		logBase := BaseData{
-			Title:     fmt.Sprintf("%s - log", branchName),
-			StylePath: root + "..",
-			Nav: NavData{
-				Root:   root,
-				Commit: fmt.Sprintf("%s", branch.Hash()),
-				Branch: branchName,
-			},
-		}
-
-		var refs = make(map[plumbing.Hash][]ShortRef)
-		refIter, err := repository.References()
-		if err != nil {
-			return err
-		}
-		err = refIter.ForEach(func(ref *plumbing.Reference) error {
-			var shortRef ShortRef
-			shortRef.fromRef(ref)
-			if (shortRef.Type != INVALID_E) && (shortRef.Type != SYMBOLIC_E) && (shortRef.Type != NOTE_E) {
-				var hash plumbing.Hash = ref.Hash()
-				if ref.Name().IsTag() {
-					obj, err := repository.TagObject(hash)
-					switch err {
-					case nil: // This is an annotated tag
-						hash = obj.Target
-					case plumbing.ErrObjectNotFound:
-					default:
-						return err
-					}
-				}
-				if val, ok := refs[hash]; ok {
-					refs[hash] = append(val, shortRef)
-				} else {
-					refs[hash] = []ShortRef{shortRef}
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-		err = generateLog(commit, refs, logBase, &logBuffer)
-		if err != nil {
-			return err
-		}
-		err = writeHtml(&logBuffer, logPath)
-		if err != nil {
-			return err
-		}
-
-		// Generate the pages for each file/dir in the branch
-		tree, err := commit.Tree()
-		if err != nil {
-			return err
-		}
-		walker := object.NewTreeWalker(tree, true, nil)
-		defer walker.Close()
-		for {
-			name, entry, err := walker.Next()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				return err
-			}
-
-			switch entry.Mode {
-			case filemode.Dir:
-				treeName := filepath.Base(string(name))
-				subTree, err := walker.Tree().Tree(treeName)
-				if err != nil {
+	var refs = make(map[plumbing.Hash][]ShortRef)
+	refIter, err := repository.References()
+	if err != nil {
+		return err
+	}
+	err = refIter.ForEach(func(ref *plumbing.Reference) error {
+		var shortRef ShortRef
+		shortRef.fromRef(ref)
+		if (shortRef.Type != INVALID_E) && (shortRef.Type != SYMBOLIC_E) && (shortRef.Type != NOTE_E) {
+			var hash plumbing.Hash = ref.Hash()
+			if ref.Name().IsTag() {
+				obj, err := repository.TagObject(hash)
+				switch err {
+				case nil: // This is an annotated tag
+					hash = obj.Target
+				case plumbing.ErrObjectNotFound:
+				default:
 					return err
 				}
-
-				path := filepath.Join(treeDir, name)
-				err = os.MkdirAll(path, 0755)
-				if err != nil {
-					return err
-				}
-
-				root := relRootFromPath(path)
-				threadGroup.Go(func() error {
-					var treeBuffer bytes.Buffer
-
-					treeBase := BaseData{
-						Title:     name,
-						StylePath: root + "..",
-						Nav: NavData{
-							Root:   root,
-							Commit: fmt.Sprintf("%s", branch.Hash()),
-							Branch: branchName,
-						},
-					}
-
-					err = generateTree(subTree, treeName, treeBase, &treeBuffer)
-					if err != nil {
-						return err
-					}
-
-					err = writeHtml(&treeBuffer, path+".html")
-					return err
-				})
-			case filemode.Submodule:
-				// No files need to be generated for a submodule since it will be rendered as a link to the submodule's repository
-				continue
-			default:
-				threadGroup.Go(func() error {
-					var fileBuffer bytes.Buffer
-					file, err := tree.TreeEntryFile(&entry)
-					if err != nil {
-						return err
-					}
-					path := filepath.Join(treeDir, name+".html")
-
-					root := relRootFromPath(path)
-					fileBase := BaseData{
-						Title:     name,
-						StylePath: root + "..",
-						Nav: NavData{
-							Root:   root,
-							Commit: fmt.Sprintf("%s", branch.Hash()),
-							Branch: branchName,
-						},
-					}
-					err = generateBlob(file, fileBase, &fileBuffer)
-					if err != nil {
-						return err
-					}
-
-					err = writeHtml(&fileBuffer, path)
-					return err
-				})
 			}
-
+			if val, ok := refs[hash]; ok {
+				refs[hash] = append(val, shortRef)
+			} else {
+				refs[hash] = []ShortRef{shortRef}
+			}
 		}
 		return nil
 	})
 	if err != nil {
 		return err
 	}
+	err = generateLog(branch, refs, logBase, &logBuffer)
+	if err != nil {
+		return err
+	}
+	err = writeHtml(&logBuffer, logPath)
+	if err != nil {
+		return err
+	}
 
-	err = threadGroup.Wait()
-	return err
+	return nil
+}
+
+func WriteTree(branch *object.Commit, repository *git.Repository, treeDir string, branchName string) error {
+	// Generate the pages for each file/dir in the branch
+	tree, err := branch.Tree()
+	if err != nil {
+		return err
+	}
+	walker := object.NewTreeWalker(tree, true, nil)
+	defer walker.Close()
+	threadGroup := new(errgroup.Group)
+	for {
+		name, entry, err := walker.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		switch entry.Mode {
+		case filemode.Dir:
+			treeName := filepath.Base(string(name))
+			subTree, err := walker.Tree().Tree(treeName)
+			if err != nil {
+				return err
+			}
+
+			path := filepath.Join(treeDir, name)
+			err = os.MkdirAll(path, 0755)
+			if err != nil {
+				return err
+			}
+
+			root := relRootFromPath(path)
+			threadGroup.Go(func() error {
+				var treeBuffer bytes.Buffer
+
+				treeBase := BaseData{
+					Title:     name,
+					StylePath: root + "..",
+					Home:      "My Repository",
+					Root:      root,
+					Nav: NavData{
+						Commit: "",
+						Branch: branchName,
+					},
+				}
+
+				err = generateTree(subTree, treeName, treeBase, &treeBuffer)
+				if err != nil {
+					return err
+				}
+
+				err = writeHtml(&treeBuffer, path+".html")
+				return err
+			})
+		case filemode.Submodule:
+			// No files need to be generated for a submodule since it will be rendered as a link to the submodule's repository
+			continue
+		default:
+			threadGroup.Go(func() error {
+				var fileBuffer bytes.Buffer
+				file, err := tree.TreeEntryFile(&entry)
+				if err != nil {
+					return err
+				}
+				recentCommit, err := latestCommitHash(&name, repository)
+				if err != nil {
+					return err
+				}
+
+				path := filepath.Join(treeDir, name+".html")
+				root := relRootFromPath(path)
+				fileBase := BaseData{
+					Title:     name,
+					StylePath: root + "..",
+					Home:      "My Repository",
+					Root:      root,
+					Nav: NavData{
+						Commit: fmt.Sprintf("%s", recentCommit),
+						Branch: branchName,
+					},
+				}
+				err = generateBlob(file, fileBase, &fileBuffer)
+				if err != nil {
+					return err
+				}
+
+				err = writeHtml(&fileBuffer, path)
+				return err
+			})
+		}
+
+	}
+
+	return threadGroup.Wait()
+}
+
+func WriteBranch(branch *plumbing.Reference, repository *git.Repository, baseDir string) error {
+	const treePrefix = "t"
+
+	branchName := filepath.Base(string(branch.Name()))
+	branchDir := filepath.Join(baseDir, branchName)
+	treeDir := filepath.Join(branchDir, treePrefix)
+	err := os.MkdirAll(treeDir, 0755)
+	if err != nil {
+		return err
+	}
+
+	commit, err := repository.CommitObject(branch.Hash())
+	if err != nil {
+		return err
+	}
+
+	err = WriteIndex(commit, branchDir, branchName, treePrefix)
+	if err != nil {
+		return err
+	}
+
+	err = WriteLog(commit, repository, branch.Hash(), branchDir, branchName)
+	if err != nil {
+		return err
+	}
+
+	err = WriteTree(commit, repository, treeDir, branchName)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func WriteRefs(repository *git.Repository, baseDir string) error {
@@ -284,16 +303,7 @@ func WriteRefs(repository *git.Repository, baseDir string) error {
 	tags := make([]TagData, 0)
 	err = tagIter.ForEach(func(tag *plumbing.Reference) error {
 		var data TagData
-		obj, err := repository.TagObject(tag.Hash())
-		switch err {
-		case nil:
-			data.fromTag(obj)
-		case plumbing.ErrObjectNotFound:
-			data.fromReference(tag)
-			err = nil
-		default:
-			return err
-		}
+		data.fromRefSwitch(tag, repository)
 		tags = append(tags, data)
 		return err
 	})
@@ -305,9 +315,11 @@ func WriteRefs(repository *git.Repository, baseDir string) error {
 	refBase := BaseData{
 		Title:     "References",
 		StylePath: root + "..",
+		Home:      "My Repository",
+		Root:      root,
 		Nav: NavData{
-			Root:   root,
 			Commit: "",
+			Branch: "",
 		},
 	}
 
