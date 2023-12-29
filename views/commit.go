@@ -2,6 +2,7 @@ package views
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"path/filepath"
 	"strings"
@@ -25,10 +26,18 @@ type CommitData struct {
 	Author    AuthorData
 	Committer AuthorData
 	Parents   []plumbing.Hash
+	Notes     []NoteData
 	Hash      plumbing.Hash
 	Stats     object.FileStats
 	Lines     Diff
 }
+
+type NoteData struct {
+	Reference string
+	Blob      BlobData
+}
+
+type NoteMap = map[string][]NoteData
 
 func (data *AuthorData) fromSignature(signature *object.Signature) {
 	data.Name = signature.Name
@@ -88,19 +97,21 @@ func latestCommitHash(path *string, repository *git.Repository) (plumbing.Hash, 
 	return commit.Hash, nil
 }
 
-func generateCommit(commit *object.Commit, base BaseData, buffer *bytes.Buffer) error {
+func generateCommit(commit *object.Commit, noteMap NoteMap, base BaseData, buffer *bytes.Buffer) error {
 	var data CommitData
 	err := data.fromCommit(commit)
+	data.Notes = noteMap[fmt.Sprintf("%s", commit.Hash)]
 
 	basePath := filepath.Join("templates", "base.html")
 	navPath := filepath.Join("templates", "nav.html")
 	commitPath := filepath.Join("templates", "commit.html")
 	footPath := filepath.Join("templates", "footer.html")
+	blobPath := filepath.Join("templates", "blob.html")
 	baseTempl, err := template.Must(template.Must(template.ParseFS(templates, basePath)).ParseFS(templates, navPath)).ParseFS(templates, footPath)
 	if err != nil {
 		return nil
 	}
-	commitTempl, err := baseTempl.ParseFS(templates, commitPath)
+	commitTempl, err := template.Must(baseTempl.ParseFS(templates, commitPath)).ParseFS(templates, blobPath)
 	if err != nil {
 		return nil
 	}

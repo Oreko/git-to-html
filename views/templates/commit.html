@@ -75,6 +75,17 @@
 {{- end -}}
     </pre>
   </div>
+  {{ with .Notes }}
+  <hr>
+  <ul class="notes">
+    {{ range . }}
+    <li>
+    {{ .Reference }}
+    {{- template "blob" .Blob -}}
+    </li>
+    {{ end }}
+  </ul>
+{{ end }}
   {{ end }}
 </div>
 {{ end }}

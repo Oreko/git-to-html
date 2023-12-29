@@ -29,6 +29,46 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 	}
 	defer commitIter.Close()
 
+	noteIter, err := repository.Notes()
+	if err != nil {
+		return err
+	}
+	defer noteIter.Close()
+
+	var noteMap NoteMap = make(NoteMap)
+	err = noteIter.ForEach(func(note *plumbing.Reference) error {
+		commit, err := repository.CommitObject(note.Hash())
+		if err != nil { // plumbing.ErrObjectNotFound is included here
+			return err
+		}
+
+		fileIter, err := commit.Files()
+		if err != nil {
+			return err
+		}
+		_ = fileIter.ForEach(func(file *object.File) error {
+			var blobData BlobData
+			blobData.fromFile(file)
+			noteData := NoteData{
+				Reference: string(note.Name()),
+				Blob:      blobData,
+			}
+
+			commitHash := file.Name
+			if val, ok := noteMap[commitHash]; ok {
+				noteMap[commitHash] = append(val, noteData)
+			} else {
+				noteMap[commitHash] = []NoteData{noteData}
+			}
+			return nil
+		})
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
 	threadGroup := new(errgroup.Group)
 
 	_ = commitIter.ForEach(func(commit *object.Commit) error {
@@ -49,7 +89,7 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 			}
 			// TODO: Need to handle notes (see refs in other sections)
 			// I think notes are stored as trees, so we'll need to do some extra work
-			err := generateCommit(commit, commitBase, &buffer)
+			err := generateCommit(commit, noteMap, commitBase, &buffer)
 			if err != nil {
 				return err
 			}
