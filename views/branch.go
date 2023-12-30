@@ -88,7 +88,9 @@ func (data *TreeData) fromTreeAndSubmodules(tree *object.Tree, submoduleMap map[
 		var link string = ""
 		name := entry.Name
 		mode := entry.Mode
-		if mode != filemode.Symlink && mode != filemode.Submodule && mode != filemode.Dir {
+		if mode == filemode.Submodule {
+			link = submoduleMap[name]
+		} else if mode != filemode.Symlink && mode != filemode.Dir {
 			file, err := tree.TreeEntryFile(&entry)
 			if err != nil {
 				return err
@@ -121,8 +123,6 @@ func (data *TreeData) fromTreeAndSubmodules(tree *object.Tree, submoduleMap map[
 				}
 				prettySize = fmt.Sprintf("%dL", len(lines))
 			}
-		} else if mode == filemode.Submodule {
-			link = submoduleMap[name]
 		}
 
 		data.Tree[name] = File{
@@ -184,7 +184,7 @@ func (data *LogData) fromBranchAndRefs(top *object.Commit, refs map[plumbing.Has
 	})
 }
 
-func submoduleNameUrlMap(repository *git.Repository) (map[string]string, error) {
+func getSubmoduleNameUrlMap(repository *git.Repository) (map[string]string, error) {
 	var mapping map[string]string = make(map[string]string)
 	wt, err := repository.Worktree()
 	if err != nil {

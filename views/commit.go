@@ -2,7 +2,6 @@ package views
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"path/filepath"
 	"strings"
@@ -59,8 +58,7 @@ func (data *CommitData) fromCommit(commit *object.Commit) error {
 	var pTree *object.Tree = nil
 	if err == nil {
 		pTree, err = parent.Tree()
-	} else if err == object.ErrParentNotFound {
-	} else {
+	} else if err != object.ErrParentNotFound {
 		return err
 	}
 	cTree, err := commit.Tree()
@@ -82,31 +80,30 @@ func (data *CommitData) fromCommit(commit *object.Commit) error {
 }
 
 func latestCommitHash(path *string, repository *git.Repository) (plumbing.Hash, error) {
-	var hash plumbing.Hash
 	cIter, err := repository.Log(&git.LogOptions{
 		Order:    git.LogOrderCommitterTime,
 		FileName: path,
 	})
 	if err != nil {
-		return hash, err
+		return plumbing.Hash{}, err
 	}
 	commit, err := cIter.Next()
 	if err != nil {
-		return hash, err
+		return plumbing.Hash{}, err
 	}
 	return commit.Hash, nil
 }
 
-func generateCommit(commit *object.Commit, noteMap NoteMap, base BaseData, buffer *bytes.Buffer) error {
+func generateCommit(commit *object.Commit, notes []NoteData, base BaseData, buffer *bytes.Buffer) error {
 	var data CommitData
 	err := data.fromCommit(commit)
-	data.Notes = noteMap[fmt.Sprintf("%s", commit.Hash)]
+	data.Notes = notes
 
 	basePath := filepath.Join("templates", "base.html")
 	navPath := filepath.Join("templates", "nav.html")
 	commitPath := filepath.Join("templates", "commit.html")
+	blobPath := filepath.Join("templates", "blob.html") // Notes are blobs
 	footPath := filepath.Join("templates", "footer.html")
-	blobPath := filepath.Join("templates", "blob.html")
 	baseTempl, err := template.Must(template.Must(template.ParseFS(templates, basePath)).ParseFS(templates, navPath)).ParseFS(templates, footPath)
 	if err != nil {
 		return nil

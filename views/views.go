@@ -29,6 +29,7 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 	}
 	defer commitIter.Close()
 
+	// This iterator is over the notes "branches" e.g., refs/notes/commits
 	noteIter, err := repository.Notes()
 	if err != nil {
 		return err
@@ -42,6 +43,7 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 			return err
 		}
 
+		// Notes consist of a blob
 		fileIter, err := commit.Files()
 		if err != nil {
 			return err
@@ -70,8 +72,8 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 	}
 
 	threadGroup := new(errgroup.Group)
-
 	_ = commitIter.ForEach(func(commit *object.Commit) error {
+		notes := noteMap[fmt.Sprintf("%s", commit.Hash)]
 		threadGroup.Go(func() error {
 			var buffer bytes.Buffer
 			fileName := fmt.Sprintf("%s.html", commit.Hash)
@@ -87,9 +89,7 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 					Branch: "",
 				},
 			}
-			// TODO: Need to handle notes (see refs in other sections)
-			// I think notes are stored as trees, so we'll need to do some extra work
-			err := generateCommit(commit, noteMap, commitBase, &buffer)
+			err := generateCommit(commit, notes, commitBase, &buffer)
 			if err != nil {
 				return err
 			}
@@ -118,7 +118,7 @@ func WriteIndex(branch *object.Commit, repository *git.Repository, repositoryNam
 			Branch: branchName,
 		},
 	}
-	submoduleMap, err := submoduleNameUrlMap(repository)
+	submoduleMap, err := getSubmoduleNameUrlMap(repository)
 	if err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 	}
 	walker := object.NewTreeWalker(tree, true, nil)
 	defer walker.Close()
-	submoduleMap, err := submoduleNameUrlMap(repository)
+	submoduleMap, err := getSubmoduleNameUrlMap(repository)
 	if err != nil {
 		return err
 	}

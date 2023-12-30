@@ -24,7 +24,7 @@ func main() {
 	if len(os.Args) != 3 {
 		execPath, err := os.Executable()
 		checkIfError(err)
-		fmt.Printf("Usage: %s repository_path repository_name\n", filepath.Base(execPath))
+		fmt.Fprintf(os.Stdout, "Usage: %s repository_path repository_name\n", filepath.Base(execPath))
 		os.Exit(1)
 	}
 
@@ -32,11 +32,11 @@ func main() {
 	repository, err := git.PlainOpen(repositoryPath)
 	checkIfError(err)
 
+	repositoryName := os.Args[2]
+
 	baseDir := "public"
 	err = os.MkdirAll(baseDir, 0755)
 	checkIfError(err)
-
-	repositoryName := os.Args[2]
 
 	err = views.WriteCommits(repository, repositoryName, baseDir)
 	checkIfError(err)

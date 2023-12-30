@@ -37,7 +37,7 @@ type ShortRef struct {
 	Type RefType
 }
 
-type RefMap map[*plumbing.Hash]ShortRef
+type RefMap map[plumbing.Hash]ShortRef
 
 func refToType(ref *plumbing.Reference) RefType {
 	var refType RefType
@@ -86,7 +86,7 @@ func (data *TagData) fromReference(ref *plumbing.Reference) {
 func (data *TagData) fromRefSwitch(tag *plumbing.Reference, repo *git.Repository) error {
 	obj, err := repo.TagObject(tag.Hash())
 	switch err {
-	case nil:
+	case nil: // This is an annotated tag
 		data.fromTag(obj)
 	case plumbing.ErrObjectNotFound:
 		data.fromReference(tag)
