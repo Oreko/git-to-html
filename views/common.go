@@ -3,12 +3,14 @@ package views
 import (
 	"bytes"
 	"embed"
+	"errors"
 	"fmt"
 	"html/template"
 	"math"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -54,8 +56,17 @@ var modeToEnum = map[filemode.FileMode]FileMode{
 	filemode.Submodule:  SUBMODULE_E,
 }
 
+func isSkipWrite(path string, objectTime time.Time) (bool, error) {
+	if info, err := os.Stat(path); err == nil {
+		return info.ModTime().After(objectTime), nil
+	} else if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	} else {
+		return true, err
+	}
+}
+
 func writeHtml(buffer *bytes.Buffer, path string) error {
-	// TODO: Commit time?
 	err := os.WriteFile(path, buffer.Bytes(), 0644)
 	return err
 }

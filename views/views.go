@@ -2,6 +2,7 @@ package views
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -73,11 +74,19 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 
 	threadGroup := new(errgroup.Group)
 	_ = commitIter.ForEach(func(commit *object.Commit) error {
+		fileName := fmt.Sprintf("%s.html", commit.Hash)
+		commitPath := filepath.Join(commitDir, fileName)
+		// What if a new note is added?
+		skip, err := isSkipWrite(commitPath, commit.Committer.When)
+		if err != nil {
+			return err
+		}
+		if skip {
+			return nil
+		}
 		notes := noteMap[fmt.Sprintf("%s", commit.Hash)]
 		threadGroup.Go(func() error {
 			var buffer bytes.Buffer
-			fileName := fmt.Sprintf("%s.html", commit.Hash)
-			commitPath := filepath.Join(commitDir, fileName)
 			root := relRootFromPath(commitPath)
 			commitBase := BaseData{
 				Title:     fmt.Sprintf("%s", commit.Hash),
@@ -208,7 +217,7 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 	threadGroup := new(errgroup.Group)
 	for {
 		name, entry, err := walker.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -223,13 +232,15 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 				return err
 			}
 
-			path := filepath.Join(treeDir, name)
-			err = os.MkdirAll(path, 0755)
+			folderPath := filepath.Join(treeDir, name)
+			htmlPath := folderPath + ".html"
+
+			err = os.MkdirAll(folderPath, 0755)
 			if err != nil {
 				return err
 			}
 
-			root := relRootFromPath(path)
+			root := relRootFromPath(folderPath)
 			threadGroup.Go(func() error {
 				var treeBuffer bytes.Buffer
 
@@ -249,25 +260,34 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 					return err
 				}
 
-				err = writeHtml(&treeBuffer, path+".html")
+				err = writeHtml(&treeBuffer, htmlPath)
 				return err
 			})
 		case filemode.Submodule:
 			// No files need to be generated for a submodule since it will be rendered as a link to the submodule's repository
 			continue
 		default:
+			commitHash, commitTime, err := latestCommit(&name, repository, branch.Hash)
+			if err != nil {
+				fmt.Println("Here")
+				return err
+			}
 			threadGroup.Go(func() error {
 				var fileBuffer bytes.Buffer
 				file, err := tree.TreeEntryFile(&entry)
 				if err != nil {
 					return err
 				}
-				recentCommit, err := latestCommitHash(&name, repository)
+
+				path := filepath.Join(treeDir, name+".html")
+				skip, err := isSkipWrite(path, commitTime)
 				if err != nil {
 					return err
 				}
+				if skip {
+					return nil
+				}
 
-				path := filepath.Join(treeDir, name+".html")
 				root := relRootFromPath(path)
 				fileBase := BaseData{
 					Title:     name,
@@ -275,7 +295,7 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 					Home:      repositoryName,
 					Root:      root,
 					Nav: NavData{
-						Commit: fmt.Sprintf("%s", recentCommit),
+						Commit: fmt.Sprintf("%s", commitHash),
 						Branch: branchName,
 					},
 				}

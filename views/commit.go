@@ -79,19 +79,20 @@ func (data *CommitData) fromCommit(commit *object.Commit) error {
 	return nil
 }
 
-func latestCommitHash(path *string, repository *git.Repository) (plumbing.Hash, error) {
+func latestCommit(path *string, repository *git.Repository, branch plumbing.Hash) (plumbing.Hash, time.Time, error) {
 	cIter, err := repository.Log(&git.LogOptions{
 		Order:    git.LogOrderCommitterTime,
+		From:     branch,
 		FileName: path,
 	})
 	if err != nil {
-		return plumbing.Hash{}, err
+		return plumbing.Hash{}, time.Time{}, err
 	}
 	commit, err := cIter.Next()
 	if err != nil {
-		return plumbing.Hash{}, err
+		return plumbing.Hash{}, time.Time{}, err
 	}
-	return commit.Hash, nil
+	return commit.Hash, commit.Committer.When, nil
 }
 
 func generateCommit(commit *object.Commit, notes []NoteData, base BaseData, buffer *bytes.Buffer) error {
