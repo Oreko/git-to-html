@@ -33,10 +33,22 @@ type CommitData struct {
 
 type NoteData struct {
 	Reference string
+	Time      time.Time
+	Hash      plumbing.Hash
 	Blob      BlobData
 }
 
 type NoteMap = map[string][]NoteData
+
+func recentNoteTime(notes []NoteData) time.Time {
+	var recent time.Time
+	for _, note := range notes {
+		if note.Time.After(recent) {
+			recent = note.Time
+		}
+	}
+	return recent
+}
 
 func (data *AuthorData) fromSignature(signature *object.Signature) {
 	data.Name = signature.Name

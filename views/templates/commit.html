@@ -80,7 +80,7 @@
   <ul class="notes">
     {{ range . }}
     <li>
-    {{ .Reference }}
+    {{ .Reference }} <a href="{{ .Hash }}.html">{{ .Hash }}</a>
     {{- template "blob" .Blob -}}
     </li>
     {{ end }}

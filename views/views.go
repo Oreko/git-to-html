@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -54,6 +55,8 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 			blobData.fromFile(file)
 			noteData := NoteData{
 				Reference: string(note.Name()),
+				Hash:      commit.Hash,
+				Time:      commit.Committer.When,
 				Blob:      blobData,
 			}
 
@@ -76,15 +79,23 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 	_ = commitIter.ForEach(func(commit *object.Commit) error {
 		fileName := fmt.Sprintf("%s.html", commit.Hash)
 		commitPath := filepath.Join(commitDir, fileName)
-		// What if a new note is added?
-		skip, err := isSkipWrite(commitPath, commit.Committer.When)
+
+		notes := noteMap[fmt.Sprintf("%s", commit.Hash)]
+		noteTime := recentNoteTime(notes)
+		var modTime time.Time
+		if noteTime.After(commit.Committer.When) {
+			modTime = noteTime
+		} else {
+			modTime = commit.Committer.When
+		}
+
+		skip, err := isSkipWrite(commitPath, modTime)
 		if err != nil {
 			return err
 		}
 		if skip {
 			return nil
 		}
-		notes := noteMap[fmt.Sprintf("%s", commit.Hash)]
 		threadGroup.Go(func() error {
 			var buffer bytes.Buffer
 			root := relRootFromPath(commitPath)
