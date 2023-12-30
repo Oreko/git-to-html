@@ -35,5 +35,4 @@ Currently, the generated html looks for a `static/style.css` one folder above th
 # Todos
 1. Better styling
 2. Allowing two compiling styles, one with the templates contained in the binary and one with the templates external.
-3. Not writing over an existing file if the file's timestamp is newer than its most recent commit's timestamp.
-4. Better representation of commit diffs for merges
+3. Better representation of commit diffs for merges
