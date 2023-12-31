@@ -75,8 +75,7 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 		return err
 	}
 
-	threadGroup := new(errgroup.Group)
-	_ = commitIter.ForEach(func(commit *object.Commit) error {
+	err = commitIter.ForEach(func(commit *object.Commit) error {
 		fileName := fmt.Sprintf("%s.html", commit.Hash)
 		commitPath := filepath.Join(commitDir, fileName)
 
@@ -96,30 +95,26 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 		if skip {
 			return nil
 		}
-		threadGroup.Go(func() error {
-			var buffer bytes.Buffer
-			root := relRootFromPath(commitPath)
-			commitBase := BaseData{
-				Title:     fmt.Sprintf("%s", commit.Hash),
-				StylePath: root + "..",
-				Home:      repositoryName,
-				Root:      root,
-				Nav: NavData{
-					Commit: "",
-					Branch: "",
-				},
-			}
-			err := generateCommit(commit, notes, commitBase, &buffer)
-			if err != nil {
-				return err
-			}
-			err = writeHtml(&buffer, commitPath)
+		var buffer bytes.Buffer
+		root := relRootFromPath(commitPath)
+		commitBase := BaseData{
+			Title:     fmt.Sprintf("%s", commit.Hash),
+			StylePath: root + "..",
+			Home:      repositoryName,
+			Root:      root,
+			Nav: NavData{
+				Commit: "",
+				Branch: "",
+			},
+		}
+		err = generateCommit(commit, notes, commitBase, &buffer)
+		if err != nil {
 			return err
-		})
-		return nil
+		}
+		err = writeHtml(&buffer, commitPath)
+		return err
 	})
 
-	err = threadGroup.Wait()
 	return err
 }
 
