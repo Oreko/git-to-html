@@ -18,15 +18,16 @@ import (
 	blackfriday "github.com/russross/blackfriday/v2"
 )
 
-//go:embed templates/*.html
+//go:embed templates templates/partials templates/partials/content
 var templates embed.FS
 
 type BaseData struct {
-	Title     string
-	Home      string
-	StylePath string
-	Nav       NavData
-	Root      string
+	Title       string
+	Home        string
+	StylePath   string
+	FaviconPath string
+	Nav         NavData
+	Root        string
 }
 
 type NavData struct {

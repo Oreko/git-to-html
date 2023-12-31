@@ -9,31 +9,31 @@
       </tr>
     </thead>
     <tbody>
-      {{- range $filename, $file := .Tree }}
-      {{- if eq $file.Mode Submodule }}
+      {{- range $filename, $file := .Tree -}}
+      {{ if eq $file.Mode Submodule -}}
       <tr class="submodule">
 	<td>
-	  <a href="{{ $file.Link }}">{{- $filename -}}</a>
+	  <a href="{{ $file.Link }}" rel="noreferrer" target="_blank">{{ $filename }}</a>
 	</td>
 	<td>
 	</td>
       </tr>
-      {{ else }}
+      {{ else -}}
       <tr class="file">
 	<td>
-	  <a href="{{- printf "%s/%s" $treename $filename -}}.html">{{ $filename }}</a>
+	  <a href="{{ printf "%s/%s" $treename $filename }}.html">{{ $filename }}</a>
 	</td>
-	{{- if eq $file.Mode Dir Symlink }}
+	{{ if eq $file.Mode Dir Symlink -}}
 	<td>
 	</td>
-	{{- else -}}
+	{{ else -}}
 	<td class="number">
 	  {{ $file.Size }}
 	</td>
-	{{ end -}}
+	{{- end }}
       </tr>
-      {{ end -}}
-      {{ end -}}
+      {{- end }}
+      {{- end }}
     </tbody>
   </table>
 </div>

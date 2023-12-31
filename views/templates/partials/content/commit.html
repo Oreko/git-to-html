@@ -1,0 +1,84 @@
+{{ define "content" }}
+{{- with .Commit -}}
+<table class="striped">
+  <tbody>
+    <tr class="author">
+      <th>
+	Author
+      </th>
+      <td>
+	{{ .Author.Name }} {{ with .Author.Email }}<a href="mailto: {{ . }}">{{ . }}</a>{{ end }}
+      </td>
+      <td>
+	{{ .Author.Date.Format "January 02, 2006" }}
+      </td>
+    </tr>
+    <tr class="committer">
+      <th>
+	Committer
+      </th>
+      <td>
+	{{ .Committer.Name }} {{ with .Committer.Email }}<a href="mailto: {{ . }}">{{ . }}</a>{{ end }}
+      </td>
+      <td>
+	{{ .Committer.Date.Format "January 02, 2006" }}
+      </td>
+    </tr>
+    <tr class="commit">
+      <th>
+	Commit
+      </th>
+      <td>
+	<a href="{{ .Hash }}.html">{{ .Hash }}</a>
+      </td>
+    </tr>
+    {{ range .Parents -}}
+    <tr class="parent">
+      <th>
+	Parent
+      </th>
+      <td>
+	<a href="{{ . }}.html">{{ . }}</a>
+      </td>
+    </tr>
+    {{- end }}
+  </tbody>
+</table>
+<h2 class="commit-head">{{- printf "%.*s" 50 .Head -}}</h2>
+{{- with .Message }}
+<div class="commit-message">
+  {{ . }}
+</div>
+{{ end -}}
+<hr>
+<table class="stat">
+  <tbody>
+    {{ range .Stats }}
+    <tr>
+      <td>{{ .Name }}</td>
+      <td class="addition">{{ if .Addition }}{{ printf "+%d" .Addition }}{{ end }}</td>
+      <td class="deletion">{{ if .Deletion }}{{ printf "-%d" .Deletion }}{{ end }}</td>
+    </tr>
+    {{ end }}
+  </tbody>
+</table>
+<div class="patches">
+  <pre>
+{{ range .Lines -}}
+<span class="diff{{ .Type }}">{{ .Text }}</span>
+{{- end -}}
+  </pre>
+</div>
+{{ with .Notes }}
+<hr>
+<ul class="notes">
+  {{ range . }}
+  <li>
+    {{ .Reference }} <a href="{{ .Hash }}.html">{{ .Hash }}</a>
+    {{- template "blob" .Blob -}}
+  </li>
+  {{ end }}
+</ul>
+{{ end }}
+{{- end -}}
+{{ end }}

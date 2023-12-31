@@ -61,27 +61,16 @@ func (data *CommitData) fromCommit(commit *object.Commit) error {
 	data.Author.fromSignature(&commit.Author)
 	data.Committer.fromSignature(&commit.Committer)
 	data.Hash = commit.Hash
-	data.Head = strings.Split(commit.Message, "\n\n")[0]
-	data.Message = commit.Message
-
-	parent, err := commit.Parent(0)
+	splitHeadAndBody := strings.Split(commit.Message, "\n\n")
+	data.Head = splitHeadAndBody[0]
+	if len(data.Head) > 50 {
+		data.Message = strings.Join(splitHeadAndBody[:], "\n\n")
+	} else {
+		data.Message = strings.Join(splitHeadAndBody[1:], "\n\n")
+	}
 
 	// TODO: We should combine diffs for a merge. How should this be done?
-	var pTree *object.Tree = nil
-	if err == nil {
-		pTree, err = parent.Tree()
-	} else if err != object.ErrParentNotFound {
-		return err
-	}
-	cTree, err := commit.Tree()
-	if err != nil {
-		return err
-	}
-	changes, err := pTree.Diff(cTree)
-	if err != nil {
-		return err
-	}
-	patch, err := changes.Patch()
+	patch, err := patchFromCommit(commit)
 	if err != nil {
 		return err
 	}
@@ -89,6 +78,25 @@ func (data *CommitData) fromCommit(commit *object.Commit) error {
 	data.Lines = makeDiff(patch)
 
 	return nil
+}
+
+func patchFromCommit(commit *object.Commit) (*object.Patch, error) {
+	var pTree *object.Tree = nil
+	parent, err := commit.Parent(0)
+	if err == nil {
+		pTree, err = parent.Tree()
+	} else if err != object.ErrParentNotFound {
+		return nil, err
+	}
+	cTree, err := commit.Tree()
+	if err != nil {
+		return nil, err
+	}
+	changes, err := pTree.Diff(cTree)
+	if err != nil {
+		return nil, err
+	}
+	return changes.Patch()
 }
 
 func latestCommit(path *string, repository *git.Repository, branch plumbing.Hash) (plumbing.Hash, time.Time, error) {
@@ -112,11 +120,12 @@ func generateCommit(commit *object.Commit, notes []NoteData, base BaseData, buff
 	err := data.fromCommit(commit)
 	data.Notes = notes
 
+	partialsPath := filepath.Join("templates", "partials")
 	basePath := filepath.Join("templates", "base.html")
-	navPath := filepath.Join("templates", "nav.html")
-	commitPath := filepath.Join("templates", "commit.html")
-	blobPath := filepath.Join("templates", "blob.html") // Notes are blobs
-	footPath := filepath.Join("templates", "footer.html")
+	navPath := filepath.Join(partialsPath, "nav.html")
+	commitPath := filepath.Join(partialsPath, "content", "commit.html")
+	blobPath := filepath.Join(partialsPath, "blob.html") // Notes are blobs
+	footPath := filepath.Join(partialsPath, "footer.html")
 	baseTempl, err := template.Must(template.Must(template.ParseFS(templates, basePath)).ParseFS(templates, navPath)).ParseFS(templates, footPath)
 	if err != nil {
 		return nil

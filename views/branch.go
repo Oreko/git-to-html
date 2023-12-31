@@ -39,6 +39,13 @@ type LogCommit struct {
 	Date    time.Time
 	Message string
 	Refs    []ShortRef
+	Stats   LogStats
+}
+
+type LogStats struct {
+	Files     int
+	Additions int
+	Deletions int
 }
 
 type LogData struct {
@@ -165,12 +172,12 @@ func (data *BlobData) fromFile(file *object.File) error {
 	return nil
 }
 
-func (data *LogData) fromBranchAndRefs(top *object.Commit, refs map[plumbing.Hash][]ShortRef) {
+func (data *LogData) fromBranchAndRefs(top *object.Commit, refs map[plumbing.Hash][]ShortRef) error {
 	commitIter := object.NewCommitIterCTime(top, nil, nil)
 	defer commitIter.Close()
 
 	// We just point to the commits here since we will generate all the commit pages at the repo level.
-	_ = commitIter.ForEach(func(commit *object.Commit) error {
+	err := commitIter.ForEach(func(commit *object.Commit) error {
 		message := strings.Split(commit.Message, "\n\n")[0]
 		logEntry := LogCommit{
 			Hash:    commit.Hash,
@@ -178,10 +185,22 @@ func (data *LogData) fromBranchAndRefs(top *object.Commit, refs map[plumbing.Has
 			Date:    commit.Author.When,
 			Message: message,
 			Refs:    refs[commit.Hash],
+			Stats:   LogStats{0, 0, 0},
+		}
+		patch, err := patchFromCommit(commit)
+		if err != nil {
+			return err
+		}
+		stats := patch.Stats()
+		logEntry.Stats.Files = len(stats)
+		for _, stat := range stats {
+			logEntry.Stats.Additions += stat.Addition
+			logEntry.Stats.Deletions += stat.Deletion
 		}
 		data.Commits = append(data.Commits, logEntry)
 		return nil
 	})
+	return err
 }
 
 func getSubmoduleNameUrlMap(repository *git.Repository) (map[string]string, error) {
@@ -209,11 +228,12 @@ func generateTree(subTree *object.Tree, submoduleMap map[string]string, treeName
 	}
 	treeData.TreeName = treeName
 
+	partialsPath := filepath.Join("templates", "partials")
 	basePath := filepath.Join("templates", "base.html")
-	navPath := filepath.Join("templates", "nav.html")
-	footPath := filepath.Join("templates", "footer.html")
-	dirPath := filepath.Join("templates", "directory.html")
-	treePath := filepath.Join("templates", "tree.html")
+	navPath := filepath.Join(partialsPath, "nav.html")
+	footPath := filepath.Join(partialsPath, "footer.html")
+	dirPath := filepath.Join(partialsPath, "content", "directory.html")
+	treePath := filepath.Join(partialsPath, "tree.html")
 	baseTempl, err := template.Must(template.Must(template.ParseFS(templates, basePath)).ParseFS(templates, navPath)).ParseFS(templates, footPath)
 	if err != nil {
 		return err
@@ -237,11 +257,12 @@ func generateBlob(file *object.File, base BaseData, buffer *bytes.Buffer) error 
 	var blobData BlobData
 	blobData.fromFile(file)
 
+	partialsPath := filepath.Join("templates", "partials")
 	basePath := filepath.Join("templates", "base.html")
-	navPath := filepath.Join("templates", "nav.html")
-	filePath := filepath.Join("templates", "file.html")
-	blobPath := filepath.Join("templates", "blob.html")
-	footPath := filepath.Join("templates", "footer.html")
+	navPath := filepath.Join(partialsPath, "nav.html")
+	filePath := filepath.Join(partialsPath, "content", "file.html")
+	blobPath := filepath.Join(partialsPath, "blob.html")
+	footPath := filepath.Join(partialsPath, "footer.html")
 	baseTempl, err := template.Must(template.Must(template.ParseFS(templates, basePath)).ParseFS(templates, navPath)).ParseFS(templates, footPath)
 	if err != nil {
 		return err
@@ -273,11 +294,12 @@ func generateIndex(branch *object.Commit, submoduleMap map[string]string, treePr
 	}
 	treeData.TreeName = treePrefix
 
+	partialsPath := filepath.Join("templates", "partials")
 	basePath := filepath.Join("templates", "base.html")
-	navPath := filepath.Join("templates", "nav.html")
-	branchPath := filepath.Join("templates", "branch.html")
-	treePath := filepath.Join("templates", "tree.html")
-	footPath := filepath.Join("templates", "footer.html")
+	navPath := filepath.Join(partialsPath, "nav.html")
+	branchPath := filepath.Join(partialsPath, "content", "branch.html")
+	treePath := filepath.Join(partialsPath, "tree.html")
+	footPath := filepath.Join(partialsPath, "footer.html")
 	baseTempl, err := template.Must(template.Must(template.ParseFS(templates, basePath)).ParseFS(templates, navPath)).ParseFS(templates, footPath)
 	if err != nil {
 		return err
@@ -301,10 +323,11 @@ func generateLog(branch *object.Commit, refs map[plumbing.Hash][]ShortRef, base 
 	var logData LogData
 	logData.fromBranchAndRefs(branch, refs)
 
+	partialsPath := filepath.Join("templates", "partials")
 	basePath := filepath.Join("templates", "base.html")
-	navPath := filepath.Join("templates", "nav.html")
-	logPath := filepath.Join("templates", "log.html")
-	footPath := filepath.Join("templates", "footer.html")
+	navPath := filepath.Join(partialsPath, "nav.html")
+	logPath := filepath.Join(partialsPath, "content", "log.html")
+	footPath := filepath.Join(partialsPath, "footer.html")
 	baseTempl, err := template.Must(template.Must(template.ParseFS(templates, basePath)).ParseFS(templates, navPath)).ParseFS(templates, footPath)
 	if err != nil {
 		return err

@@ -1,9 +1,9 @@
 {{ define "blob" }}
 <div class="blob">
-  {{ if .IsBinary }}
+  {{ if .IsBinary -}}
   Binary file ommitted
-  {{ else }}
-  {{ with .Markdown}}
+  {{- else }}
+  {{- with .Markdown -}}
   <article class="markdown">
       {{ . }}
   </article>
@@ -16,8 +16,8 @@
 <pre><code>{{ . }}</code></pre>
       </td>
     </tr>
-    {{ end }}
+    {{- end }}
   </table>
-  {{ end }}
+  {{- end }}
 </div>
 {{ end }}

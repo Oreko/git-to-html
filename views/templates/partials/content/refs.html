@@ -1,5 +1,5 @@
 {{ define "content" }}
-<div class="content">
+<content>
   <table class="striped">
     <thead>
       <tr class="nohover">
@@ -19,7 +19,7 @@
       {{ end }}
     </tbody>
   </table>
-  {{ with .Tags }}
+  {{ with .Tags -}}
   <table class="striped">
     <thead>
       <tr class="nohover">
@@ -55,5 +55,5 @@
     </tbody>
   </table>
   {{- end }}
-</div>
+</content>
 {{ end }}

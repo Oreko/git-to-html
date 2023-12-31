@@ -1,16 +1,18 @@
 {{ define "content" }}
-<div class="content">
-  <table id="commits" class="striped">
+<content>
+  <table class="striped commits">
     <thead>
       <tr class="nohover">
 	<td>Date</td>
 	<td>Message</td>
 	<td>Author</td>
+	<td>Files</td>
+	<td>Lines</td>
 	<td>Ref</td>
       </tr>
     </thead>
     <tbody>
-      {{ range .Log.Commits }}
+      {{- range .Log.Commits }}
       <tr class="commit">
 	<td class="date">
 	  {{ .Date.Format "January 02, 2006" }}
@@ -22,13 +24,19 @@
 	  {{ .Author }}
 	</td>
 	<td>
-	  {{ range .Refs }}
+	  {{ .Stats.Files }}
+	</td>
+	<td>
+	  <span class="deletions">{{ printf "-%d" .Stats.Deletions }}</span>/<span class="additions">{{ printf "+%d" .Stats.Additions }}</span>
+	</td>
+	<td>
+	  {{- range .Refs }}
 	  <span class={{ RefEnumToString .Type }}>{{ .Name }}</span>
 	  {{ end -}}
 	</td>
       </tr>
-      {{ end }}
+      {{ end -}}
     </tbody>
   </table>
-</div>
+</content>
 {{ end }}

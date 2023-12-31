@@ -1,27 +1,30 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta http-equiv="X-Clacks-Overhead" content="GNU Terry Pratchett" >
-    <meta charset="utf-8" >
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" >
-    <title>{{with .Title}} {{- . -}} {{ else }} Empty Title {{ end }}</title>
-    <meta name="referrer" content="no-referrer" >
-    <!-- styles -->
-    <link rel="stylesheet" href="{{- .StylePath -}}/static/styles.css">
+  <meta http-equiv="X-Clacks-Overhead" content="GNU Terry Pratchett" >
+  <meta charset="utf-8" >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" >
+  {{ with .FaviconPath -}}
+  <link rel="icon" type="image/x-icon" href="{{ . }}" />
+  {{- end }}
+  <title>{{ with .Title }}{{ . }} | {{ end }}{{ .Home }}</title>
+  <meta name="referrer" content="no-referrer" >
+  <meta name="title" content="{{ with .Title }}{{ . }}{{ else }}{{ .Home }}{{ end }}" >
+  <!-- styles -->
+  <link rel="stylesheet" href="{{- .StylePath -}}/static/styles.css">
   </head>
   <body>
-    <a href="{{ .Root }}refs.html" rel="noreferrer" class="title"><h1>{{ .Home }}</h1></a>
-    <!-- navbar -->
-    <nav>
+    <header>
       {{- template "nav" . -}}
-    </nav>
+    </header>
+    <hr />
     <!-- content -->
-    <section class="content">
+    <main>
       {{- template "content" . -}}
-    </section>
+    </main>
     <!-- footer -->
-    <section class="footer">
+    <footer>
       {{- template "footer" . -}}
-    </section>
+    </footer>
   </body>
 </html>

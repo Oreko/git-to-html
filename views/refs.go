@@ -96,10 +96,12 @@ func (data *TagData) fromRefSwitch(tag *plumbing.Reference, repo *git.Repository
 }
 
 func generateRefs(branches *[]string, tags *[]TagData, data BaseData, buffer *bytes.Buffer) error {
+
+	partialsPath := filepath.Join("templates", "partials")
 	basePath := filepath.Join("templates", "base.html")
-	navPath := filepath.Join("templates", "nav.html")
-	refsPath := filepath.Join("templates", "refs.html")
-	footPath := filepath.Join("templates", "footer.html")
+	navPath := filepath.Join(partialsPath, "nav.html")
+	refsPath := filepath.Join(partialsPath, "content", "refs.html")
+	footPath := filepath.Join(partialsPath, "footer.html")
 	baseTempl, err := template.Must(template.Must(template.ParseFS(templates, basePath)).ParseFS(templates, navPath)).ParseFS(templates, footPath)
 	if err != nil {
 		return err

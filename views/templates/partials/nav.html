@@ -1,0 +1,15 @@
+{{ define "nav" }}
+<a href="{{ .Root }}refs.html" rel="noreferrer" class="title"><h1>{{ .Home }}</h1></a>
+<!-- navbar -->
+<nav>
+  <ul class="nav-list">
+    {{ if .Nav.Branch -}}
+    <li><a href="{{ .Root }}{{ .Nav.Branch }}/log.html">log</a></li>
+    <li><a href="{{ .Root }}{{ .Nav.Branch }}/index.html">tree</a></li>
+    {{- end }}
+    {{ if .Nav.Commit -}}
+    <li><a href="{{ .Root }}c/{{ .Nav.Commit }}.html">commit</a></li>
+  {{- end }}
+  </ul>
+</nav>
+{{ end }}
