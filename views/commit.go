@@ -100,6 +100,7 @@ func patchFromCommit(commit *object.Commit) (*object.Patch, error) {
 }
 
 func latestCommit(path *string, repository *git.Repository, branch plumbing.Hash) (plumbing.Hash, time.Time, error) {
+	// This code is currently too slow due to an issue on the go-git repo causing Log to run for too long
 	cIter, err := repository.Log(&git.LogOptions{
 		Order:    git.LogOrderCommitterTime,
 		From:     branch,
