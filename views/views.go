@@ -273,10 +273,10 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 			// No files need to be generated for a submodule since it will be rendered as a link to the submodule's repository
 			continue
 		default:
-			// commitHash, commitTime, err := latestCommit(&name, repository, branch.Hash)
-			// if err != nil {
-			//	return err
-			// }
+			commitHash, commitTime, err := latestCommit(&name, repository, branch.Hash)
+			if err != nil {
+				return err
+			}
 			threadGroup.Go(func() error {
 				var fileBuffer bytes.Buffer
 				file, err := tree.TreeEntryFile(&entry)
@@ -285,14 +285,14 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 				}
 
 				path := filepath.Join(treeDir, name+".html")
-				// skip, err := isSkipWrite(path, commitTime)
+				skip, err := isSkipWrite(path, commitTime)
 
-				// if err != nil {
-				// 	return err
-				// }
-				// if skip {
-				// 	return nil
-				// }
+				if err != nil {
+					return err
+				}
+				if skip {
+					return nil
+				}
 
 				root := relRootFromPath(path)
 				fileBase := BaseData{
@@ -301,7 +301,7 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 					Home:      repositoryName,
 					Root:      root,
 					Nav: NavData{
-						Commit: "", //fmt.Sprintf("%s", commitHash),
+						Commit: fmt.Sprintf("%s", commitHash),
 						Branch: branchName,
 					},
 				}
