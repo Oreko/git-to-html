@@ -118,7 +118,7 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 	return err
 }
 
-func WriteIndex(branch *object.Commit, repository *git.Repository, repositoryName string, branchDir string, branchName string, treePrefix string) error {
+func WriteIndex(branch *object.Commit, repository *git.Repository, repositoryName string, hash plumbing.Hash, branchDir string, branchName string, treePrefix string) error {
 	var branchBuffer bytes.Buffer
 	branchPath := filepath.Join(branchDir, "index.html")
 
@@ -129,7 +129,7 @@ func WriteIndex(branch *object.Commit, repository *git.Repository, repositoryNam
 		Home:      repositoryName,
 		Root:      root,
 		Nav: NavData{
-			Commit: "",
+			Commit: fmt.Sprintf("%s", hash),
 			Branch: branchName,
 		},
 	}
@@ -336,7 +336,7 @@ func WriteBranch(branch *plumbing.Reference, repository *git.Repository, reposit
 		return err
 	}
 
-	err = WriteIndex(commit, repository, repositoryName, branchDir, branchName, treePrefix)
+	err = WriteIndex(commit, repository, repositoryName, branch.Hash(), branchDir, branchName, treePrefix)
 	if err != nil {
 		return err
 	}
