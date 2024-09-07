@@ -2,13 +2,13 @@
 <content>
   <table class="striped commits">
     <thead>
-      <tr class="nohover">
-	<td>Date</td>
-	<td>Message</td>
-	<td>Author</td>
-	<td>Files</td>
-	<td>Lines</td>
-	<td>Ref</td>
+      <tr>
+	<th>Date</td>
+	<th>Message</td>
+	<th class="hidesmallscreen">Author</td>
+	<th class="hidesmallscreen">Files</td>
+	<th class="hidesmallscreen">Lines</td>
+	<th>Ref</td>
       </tr>
     </thead>
     <tbody>
@@ -20,13 +20,13 @@
 	<td>
 	  <a href="{{ printf "../c/%s.html" .Hash }}">{{- printf "%.*s" 50 .Message -}}</a>
 	</td>
-	<td>
+	<td class="hidesmallscreen">
 	  {{ .Author }}
 	</td>
-	<td>
+	<td class="hidesmallscreen">
 	  {{ .Stats.Files }}
 	</td>
-	<td>
+	<td class="hidesmallscreen">
 	  <span class="deletions">{{ printf "-%d" .Stats.Deletions }}</span>/<span class="additions">{{ printf "+%d" .Stats.Additions }}</span>
 	</td>
 	<td>

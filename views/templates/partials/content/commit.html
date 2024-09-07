@@ -6,10 +6,10 @@
       <th>
 	Author
       </th>
-      <td>
+      <td class="breakanywhere">
 	{{ .Author.Name }} {{ with .Author.Email }}<a href="mailto: {{ . }}">{{ . }}</a>{{ end }}
       </td>
-      <td>
+      <td class="hidesmallscreen">
 	{{ .Author.Date.Format "January 02, 2006" }}
       </td>
     </tr>
@@ -17,10 +17,10 @@
       <th>
 	Committer
       </th>
-      <td>
+      <td class="breakanywhere">
 	{{ .Committer.Name }} {{ with .Committer.Email }}<a href="mailto: {{ . }}">{{ . }}</a>{{ end }}
       </td>
-      <td>
+      <td class="hidesmallscreen">
 	{{ .Committer.Date.Format "January 02, 2006" }}
       </td>
     </tr>
@@ -28,7 +28,7 @@
       <th>
 	Commit
       </th>
-      <td>
+      <td class="breakanywhere">
 	<a href="{{ .Hash }}.html">{{ .Hash }}</a>
       </td>
     </tr>
@@ -37,7 +37,7 @@
       <th>
 	Parent
       </th>
-      <td>
+      <td class="breakanywhere">
 	<a href="{{ . }}.html">{{ . }}</a>
       </td>
     </tr>

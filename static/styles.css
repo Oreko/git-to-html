@@ -5,25 +5,31 @@
     --main-link-unvisited-color: #880000;
     --main-link-visited-color: #0000ee;
     --main-link-hover-color: #DD0000;
-    --main-table-border-color:#c9d1d9;
+    --main-table-border-color: #c9d1d9;
+    --table-stripe-head-color: #fff;
+    --table-stripe-color: rgba(102, 82, 69, 0.05);
+    --table-stripe-hover-color: rgba(102, 82, 69, 0.1);;
 }
 
 @media screen and (max-width: 500px) {
-  html {
-    font-size: 90%;
-  }
+    html {
+	font-size: 90%;
+    }
+    .hidesmallscreen {
+	display: none;
+    }
 }
 
 @media screen and (min-width: 1024px) {
-  html {
-    font-size: 110%;
-  }
+    html {
+	font-size: 110%;
+    }
 }
 
 @media screen and (min-width: 2048px) {
-  html {
-    font-size: 120%;
-  }
+    html {
+	font-size: 120%;
+    }
 }
 
 body {
@@ -209,28 +215,23 @@ table.stat td.addition {
 }
 
 table.striped {
-    width: 100%;
     border-collapse: collapse;
 }
 
-table.striped tr:nth-child(odd) {
-    background-color: whitesmoke;
+table.striped tbody tr:nth-child(odd) {
+    background-color: var(--table-stripe-color);
 }
 
-table.striped tr:hover {
-    background: #eee;
+table.striped tbody tr:hover {
+    background: var(--table-stripe-hover-color);
 }
 
 table.striped th {
     text-align: left;
 }
 
-table.striped tr.nohover{
-    background-color: white;
-}
-
-table.striped tr.nohover:hover{
-    background-color: white;
+table.striped thead {
+    background-color: var(--table-stripe-head-color);
 }
 
 div.blob {
@@ -276,4 +277,9 @@ table.src td.linenums::before {
     text-align: right;
     white-space: nowrap;
     vertical-align: top;
+}
+
+.breakanywhere {
+    word-wrap: anywhere;
+    overflow-wrap: anywhere;
 }
