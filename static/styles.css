@@ -1,14 +1,16 @@
 :root {
-    --main-bg-gradient1: #ffccab;
-    --main-bg-gradient2: #ffffee;
-    --main-text-color: #800043;
-    --main-link-unvisited-color: #880000;
-    --main-link-visited-color: #0000ee;
-    --main-link-hover-color: #DD0000;
-    --main-table-border-color: #c9d1d9;
-    --table-stripe-head-color: #fff;
-    --table-stripe-color: rgba(102, 82, 69, 0.05);
-    --table-stripe-hover-color: rgba(102, 82, 69, 0.1);;
+    --main-bg-gradient1: #1D8AA5;
+    --main-bg-gradient2: #1D2D3A;
+    --main-header-color: #1D9DC0;
+    --main-title-color: #A5E1E0;
+    --main-text-color: #E0F4F2;
+    --main-link-unvisited-color: #1DA5D0;
+    --main-link-visited-color: #A5A7A7;
+    --main-link-hover-color: #B9E2E8;
+    --main-table-border-color: #C9D1D9;
+    --table-stripe-head-color: #2E3C53;
+    --table-stripe-color: #3A506B;
+    --table-stripe-hover-color: #1D5465;
 }
 
 @media screen and (max-width: 500px) {
@@ -44,9 +46,9 @@ body {
     max-width: 40rem;
     min-height: 100vh;
     overflow-wrap: break-word;
+    word-wrap: break-word;
     padding: 0 1rem;
     text-align: left;
-    word-wrap: break-word;
 }
 
 main {
@@ -74,10 +76,8 @@ h2,
 h3,
 h4,
 h5,
-h6,
-strong,
-b {
-    color: var(--main-text-color);
+h6 {
+    color: var(--main-header-color);
 }
 
 h1 {
@@ -94,6 +94,7 @@ h1 {
 .title h1 {
     font-weight: 500;
     margin-bottom: 1rem;
+    color: var(--main-title-color);
 }
 
 h2 {
@@ -132,7 +133,9 @@ a:not(nav a):hover {
     color: var(--main-link-hover-color);
 }
 
-ul.nav-list, ul.post-tags, ul.post-categories {
+ul.nav-list,
+ul.post-tags,
+ul.post-categories {
     list-style-type: none;
     margin: 0;
     padding: 0;
@@ -206,12 +209,18 @@ div.content {
     color: green;
 }
 
-table.stat td.deletion {
-    color: red;
+table.commits {
+    font-size: 90%;
 }
 
-table.stat td.addition {
-    color: green;
+table.stat td.deletion,
+tr.commit .deletions {
+    color: #BF675F;
+}
+
+table.stat td.addition,
+tr.commit .additions {
+    color: #7D9277;
 }
 
 table.striped {
