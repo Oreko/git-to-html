@@ -89,6 +89,9 @@ func makeDiff(patch *object.Patch) Diff {
 	db := NewDiffBuilder()
 
 	message := patch.Message()
+	if !strings.HasSuffix(message, "\n") {
+		message = message + "\n"
+	}
 	db.Add(Meta, message)
 
 	for _, filePatch := range patch.FilePatches() {
@@ -300,7 +303,6 @@ type hunk struct {
 
 func (h *hunk) Blocks() []DiffBlock {
 	var sb strings.Builder
-
 	Blocks := make([]DiffBlock, 0)
 
 	sb.WriteString("@@ -")
@@ -309,7 +311,9 @@ func (h *hunk) Blocks() []DiffBlock {
 	} else {
 		fmt.Fprintf(&sb, "%d,%d", h.fromLine, h.fromCount)
 	}
+
 	sb.WriteString(" +")
+
 	if h.toCount == 1 {
 		fmt.Fprintf(&sb, "%d", h.toLine)
 	} else {
@@ -317,13 +321,19 @@ func (h *hunk) Blocks() []DiffBlock {
 	}
 	sb.WriteString(" @@")
 
+	Blocks = append(Blocks, DiffBlock{
+		Type: Frag,
+		Text: sb.String(),
+	})
+
+	sb.Reset()
 	if h.ctxPrefix != "" {
 		sb.WriteByte(' ')
 		sb.WriteString(h.ctxPrefix)
 	}
 
 	Blocks = append(Blocks, DiffBlock{
-		Type: Frag,
+		Type: Meta,
 		Text: sb.String() + "\n",
 	})
 

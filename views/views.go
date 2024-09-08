@@ -105,13 +105,13 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 				Home:      repositoryName,
 				Root:      root,
 				Nav: NavData{
-				     Commit: "",
-				     Branch: "",
+					Commit: "",
+					Branch: "",
 				},
 			}
 			err = generateCommit(commit, notes, commitBase, &buffer)
 			if err != nil {
-			   return err
+				return err
 			}
 			err = writeHtml(&buffer, commitPath)
 			return err
