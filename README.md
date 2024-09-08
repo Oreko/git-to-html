@@ -15,7 +15,7 @@ If you built using nix, the binary will be at `results/bin/`. If you built using
 
 Run the following command
 ```
-go-to-html path/to/repository "repository name goes here"
+git-to-html path/to/repository "repository name goes here"
 ```
 ## Using Nix
 Run the following command
