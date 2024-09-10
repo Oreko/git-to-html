@@ -75,8 +75,7 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 		return err
 	}
 
-	threadGroup := new(errgroup.Group)
-	_ = commitIter.ForEach(func(commit *object.Commit) error {
+	err = commitIter.ForEach(func(commit *object.Commit) error {
 		fileName := fmt.Sprintf("%s.html", commit.Hash)
 		commitPath := filepath.Join(commitDir, fileName)
 
@@ -96,30 +95,26 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 		if skip {
 			return nil
 		}
-		threadGroup.Go(func() error {
-			var buffer bytes.Buffer
-			root := relRootFromPath(commitPath)
-			commitBase := BaseData{
-				Title:     fmt.Sprintf("%s", commit.Hash),
-				StylePath: root + "..",
-				Home:      repositoryName,
-				Root:      root,
-				Nav: NavData{
-					Commit: "",
-					Branch: "",
-				},
-			}
-			err = generateCommit(commit, notes, commitBase, &buffer)
-			if err != nil {
-				return err
-			}
-			err = writeHtml(&buffer, commitPath)
+		var buffer bytes.Buffer
+		root := relRootFromPath(commitPath)
+		commitBase := BaseData{
+			Title:     fmt.Sprintf("%s", commit.Hash),
+			StylePath: root + "..",
+			Home:      repositoryName,
+			Root:      root,
+			Nav: NavData{
+				Commit: "",
+				Branch: "",
+			},
+		}
+		err = generateCommit(commit, notes, commitBase, &buffer)
+		if err != nil {
 			return err
-		})
-		return nil
+		}
+		err = writeHtml(&buffer, commitPath)
+		return err
 	})
 
-	err = threadGroup.Wait()
 	return err
 }
 
@@ -252,28 +247,27 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 			}
 
 			root := relRootFromPath(folderPath)
-			threadGroup.Go(func() error {
-				var treeBuffer bytes.Buffer
+			var treeBuffer bytes.Buffer
+			treeBase := BaseData{
+				Title:     name,
+				StylePath: root + "..",
+				Home:      repositoryName,
+				Root:      root,
+				Nav: NavData{
+					Commit: "",
+					Branch: branchName,
+				},
+			}
 
-				treeBase := BaseData{
-					Title:     name,
-					StylePath: root + "..",
-					Home:      repositoryName,
-					Root:      root,
-					Nav: NavData{
-						Commit: "",
-						Branch: branchName,
-					},
-				}
-
-				err = generateTree(subTree, submoduleMap, treeName, treeBase, &treeBuffer)
-				if err != nil {
-					return err
-				}
-
-				err = writeHtml(&treeBuffer, htmlPath)
+			err = generateTree(subTree, submoduleMap, treeName, treeBase, &treeBuffer)
+			if err != nil {
 				return err
-			})
+			}
+
+			err = writeHtml(&treeBuffer, htmlPath)
+			if err != nil {
+				return err
+			}
 		case filemode.Submodule:
 			// No files need to be generated for a submodule since it will be rendered as a link to the submodule's repository
 			continue
@@ -282,12 +276,12 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 			if err != nil {
 				return err
 			}
+			file, err := tree.TreeEntryFile(&entry)
+			if err != nil {
+				return err
+			}
 			threadGroup.Go(func() error {
 				var fileBuffer bytes.Buffer
-				file, err := tree.TreeEntryFile(&entry)
-				if err != nil {
-					return err
-				}
 
 				path := filepath.Join(treeDir, name+".html")
 				skip, err := isSkipWrite(path, commitTime)
