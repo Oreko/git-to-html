@@ -14,7 +14,7 @@
 
 buildGoApplication {
   pname = "git-to-html";
-  version = "1.0.0";
+  version = "1.1.0";
   pwd = ./.;
   src = ./.;
   modules = ./gomod2nix.toml;
