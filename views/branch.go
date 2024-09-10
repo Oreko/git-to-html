@@ -209,7 +209,9 @@ func (data *LogData) fromBranchAndRefs(top *object.Commit, refs map[plumbing.Has
 func getSubmoduleNameUrlMap(branch *object.Commit, repository *git.Repository) (map[string]string, error) {
 	var mapping map[string]string = make(map[string]string)
 	subModFile, err := branch.File(".gitmodules")
-	if (err != nil) && (err != object.ErrFileNotFound) {
+	if err == object.ErrFileNotFound {
+		return mapping, nil
+	} else if err != nil {
 		return mapping, err
 	}
 	if subModFile.Mode == filemode.Symlink {
