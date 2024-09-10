@@ -138,7 +138,7 @@ func WriteIndex(branch *object.Commit, repository *git.Repository, repositoryNam
 			Branch: branchName,
 		},
 	}
-	submoduleMap, err := getSubmoduleNameUrlMap(repository)
+	submoduleMap, err := getSubmoduleNameUrlMap(branch, repository)
 	if err != nil {
 		return err
 	}
@@ -221,7 +221,7 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 	}
 	walker := object.NewTreeWalker(tree, true, nil)
 	defer walker.Close()
-	submoduleMap, err := getSubmoduleNameUrlMap(repository)
+	submoduleMap, err := getSubmoduleNameUrlMap(branch, repository)
 	if err != nil {
 		return err
 	}

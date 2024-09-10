@@ -2,6 +2,7 @@ package views
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"html/template"
 	"path/filepath"
@@ -9,9 +10,11 @@ import (
 	"time"
 
 	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/utils/ioutil"
 )
 
 type File struct {
@@ -203,19 +206,34 @@ func (data *LogData) fromBranchAndRefs(top *object.Commit, refs map[plumbing.Has
 	return err
 }
 
-func getSubmoduleNameUrlMap(repository *git.Repository) (map[string]string, error) {
+func getSubmoduleNameUrlMap(branch *object.Commit, repository *git.Repository) (map[string]string, error) {
 	var mapping map[string]string = make(map[string]string)
-	wt, err := repository.Worktree()
+	subModFile, err := branch.File(".gitmodules")
+	if (err != nil) && (err != object.ErrFileNotFound) {
+		return mapping, err
+	}
+	if subModFile.Mode == filemode.Symlink {
+		return mapping, errors.New(".gitmodules is a symlink")
+	}
+
+	reader, err := subModFile.Reader()
 	if err != nil {
 		return mapping, err
 	}
-	submodules, err := wt.Submodules()
+	defer ioutil.CheckClose(reader, &err)
+	buf := new(bytes.Buffer)
+	_, err = buf.ReadFrom(reader)
 	if err != nil {
 		return mapping, err
 	}
-	for _, submodule := range submodules {
-		config := submodule.Config()
-		mapping[config.Path] = config.URL
+
+	m := config.NewModules()
+	err = m.Unmarshal(buf.Bytes())
+	if err != nil {
+		return mapping, err
+	}
+	for _, submodule := range m.Submodules {
+		mapping[submodule.Path] = submodule.URL
 	}
 	return mapping, nil
 }

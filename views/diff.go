@@ -89,10 +89,12 @@ func makeDiff(patch *object.Patch) Diff {
 	db := NewDiffBuilder()
 
 	message := patch.Message()
-	if !strings.HasSuffix(message, "\n") {
-		message = message + "\n"
+	if message != "" {
+		if !strings.HasSuffix(message, "\n") {
+			message = message + "\n"
+		}
+		db.Add(Meta, message)
 	}
-	db.Add(Meta, message)
 
 	for _, filePatch := range patch.FilePatches() {
 		header := makeDiffHeader(filePatch)
