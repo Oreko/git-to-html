@@ -2,6 +2,7 @@ package views
 
 import (
 	"bytes"
+	"errors"
 	"html/template"
 	"path/filepath"
 	"strings"
@@ -24,12 +25,11 @@ const (
 )
 
 type TagData struct {
-	Name        string
-	Target      plumbing.Hash
-	IsAnnotated bool
-	Head        string
-	Tagger      string
-	Date        time.Time
+	Name   string
+	Target plumbing.Hash
+	Head   string
+	Tagger string
+	Date   time.Time
 }
 type TagDataSlice []TagData
 
@@ -70,23 +70,28 @@ func (self *ShortRef) fromRef(ref *plumbing.Reference) {
 	}
 }
 
-func (data *TagData) fromTag(tag *object.Tag) {
+func (data *TagData) fromTag(tag *object.Tag) error {
+	commit, err := tag.Commit()
+	if err == nil {
+		data.Target = commit.Hash
+	} else if !(errors.Is(err, object.ErrUnsupportedObject)) {
+		return err
+	}
 	data.Name = tag.Name
-	data.Target = tag.Target
-	data.IsAnnotated = true
 	data.Head = strings.Split(tag.Message, "\n\n")[0]
 	data.Tagger = tag.Tagger.Name
 	data.Date = tag.Tagger.When
+	return nil
 }
 
 func (data *TagData) fromReference(ref *plumbing.Reference, repo *git.Repository) error {
 	commit, err := repo.CommitObject(ref.Hash())
-	if err != nil {
+	if err == nil {
+		data.Target = commit.Hash
+	} else if !(errors.Is(err, object.ErrUnsupportedObject)) {
 		return err
 	}
 	data.Name = ref.Name().Short()
-	data.Target = ref.Hash()
-	data.IsAnnotated = false
 	data.Head = ""
 	data.Tagger = commit.Author.Name
 	data.Date = commit.Committer.When
@@ -97,7 +102,7 @@ func (data *TagData) fromRefSwitch(tag *plumbing.Reference, repo *git.Repository
 	obj, err := repo.TagObject(tag.Hash())
 	switch err {
 	case nil: // This is an annotated tag
-		data.fromTag(obj)
+		err = data.fromTag(obj)
 	case plumbing.ErrObjectNotFound:
 		err = data.fromReference(tag, repo)
 	}
@@ -105,7 +110,6 @@ func (data *TagData) fromRefSwitch(tag *plumbing.Reference, repo *git.Repository
 }
 
 func generateRefs(branches *[]string, tags *TagDataSlice, data BaseData, buffer *bytes.Buffer) error {
-
 	partialsPath := filepath.Join("templates", "partials")
 	basePath := filepath.Join("templates", "base.html")
 	navPath := filepath.Join(partialsPath, "nav.html")

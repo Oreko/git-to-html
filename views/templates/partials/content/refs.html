@@ -33,15 +33,15 @@
       {{ range . }}
       <tr>
 	<td>
-	  <a href="c/{{ .Target }}.html">{{ .Name }}</a>
+	  {{ if .Target.IsZero -}}
+	  {{- printf "%.*s" 50 .Name -}}
+	  {{- else -}}
+	  <a href="c/{{ .Target }}.html">{{ printf "%.*s" 50 .Name }}</a>
+	  {{- end }}
 	</td>
-	{{ if .IsAnnotated -}}
 	<td>
-	  {{ printf "%.*s" 50 .Head }}
+	  {{- printf "%.*s" 50 .Head -}}
 	</td>
-	{{ else -}}
-	<td></td>
-	{{- end }}
 	<td>
 	  {{ .Tagger }}
 	</td>

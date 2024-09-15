@@ -380,7 +380,7 @@ func WriteRefs(repository *git.Repository, repositoryName string, baseDir string
 	tags := make(TagDataSlice, 0)
 	err = tagIter.ForEach(func(tag *plumbing.Reference) error {
 		var data TagData
-		data.fromRefSwitch(tag, repository)
+		err = data.fromRefSwitch(tag, repository)
 		tags = append(tags, data)
 		return err
 	})
