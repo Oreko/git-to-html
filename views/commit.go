@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
@@ -97,23 +96,6 @@ func patchFromCommit(commit *object.Commit) (*object.Patch, error) {
 		return nil, err
 	}
 	return changes.Patch()
-}
-
-func latestCommit(path *string, repository *git.Repository, branch plumbing.Hash) (plumbing.Hash, time.Time, error) {
-	// This code is currently too slow due to an issue on the go-git repo causing Log to run for too long
-	cIter, err := repository.Log(&git.LogOptions{
-		Order:    git.LogOrderCommitterTime,
-		From:     branch,
-		FileName: path,
-	})
-	if err != nil {
-		return plumbing.Hash{}, time.Time{}, err
-	}
-	commit, err := cIter.Next()
-	if err != nil {
-		return plumbing.Hash{}, time.Time{}, err
-	}
-	return commit.Hash, commit.Committer.When, nil
 }
 
 func generateCommit(commit *object.Commit, notes []NoteData, base BaseData, buffer *bytes.Buffer) error {

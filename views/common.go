@@ -58,13 +58,14 @@ var modeToEnum = map[filemode.FileMode]FileMode{
 }
 
 func isSkipWrite(path string, objectTime time.Time) (bool, error) {
-	if info, err := os.Stat(path); err == nil {
-		return info.ModTime().After(objectTime), nil
-	} else if errors.Is(err, os.ErrNotExist) {
+	info, err := os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		// The file doesn't exist, so the file is vaccuously older
 		return false, nil
-	} else {
+	} else if err != nil {
 		return true, err
 	}
+	return info.ModTime().After(objectTime), nil
 }
 
 func writeHtml(buffer *bytes.Buffer, path string) error {

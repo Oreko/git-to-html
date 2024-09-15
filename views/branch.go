@@ -190,11 +190,11 @@ func (data *LogData) fromBranchAndRefs(top *object.Commit, refs map[plumbing.Has
 			Refs:    refs[commit.Hash],
 			Stats:   LogStats{0, 0, 0},
 		}
-		patch, err := patchFromCommit(commit)
+		// PERFORMANCE: Calling stats for every commit is expensive.
+		stats, err := commit.Stats()
 		if err != nil {
 			return err
 		}
-		stats := patch.Stats()
 		logEntry.Stats.Files = len(stats)
 		for _, stat := range stats {
 			logEntry.Stats.Additions += stat.Addition

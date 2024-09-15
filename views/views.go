@@ -24,7 +24,8 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 	}
 
 	commitIter, err := repository.Log(&git.LogOptions{
-		All: true,
+		All:   true,
+		Order: git.LogOrderCommitterTime,
 	})
 	if err != nil {
 		return err
@@ -107,6 +108,7 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 				Branch: "",
 			},
 		}
+		// PERFORMANCE: Calling stats for every commit is expensive.
 		err = generateCommit(commit, notes, commitBase, &buffer)
 		if err != nil {
 			return err
@@ -142,6 +144,7 @@ func WriteIndex(branch *object.Commit, repository *git.Repository, repositoryNam
 	if err != nil {
 		return err
 	}
+
 	err = writeHtml(&branchBuffer, branchPath)
 	if err != nil {
 		return err
@@ -153,6 +156,14 @@ func WriteIndex(branch *object.Commit, repository *git.Repository, repositoryNam
 func WriteLog(branch *object.Commit, repository *git.Repository, repositoryName string, hash plumbing.Hash, branchDir string, branchName string) error {
 	var logBuffer bytes.Buffer
 	logPath := filepath.Join(branchDir, "log.html")
+	skip, err := isSkipWrite(logPath, branch.Committer.When)
+	if err != nil {
+		return err
+	}
+	if skip {
+		return nil
+	}
+
 	root := relRootFromPath(logPath)
 	logBase := BaseData{
 		Title:     fmt.Sprintf("%s - log", branchName),
@@ -196,10 +207,12 @@ func WriteLog(branch *object.Commit, repository *git.Repository, repositoryName 
 	if err != nil {
 		return err
 	}
+
 	err = generateLog(branch, refs, logBase, &logBuffer)
 	if err != nil {
 		return err
 	}
+
 	err = writeHtml(&logBuffer, logPath)
 	if err != nil {
 		return err
@@ -220,6 +233,7 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 	if err != nil {
 		return err
 	}
+
 	threadGroup := new(errgroup.Group)
 	for {
 		name, entry, err := walker.Next()
@@ -272,27 +286,15 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 			// No files need to be generated for a submodule since it will be rendered as a link to the submodule's repository
 			continue
 		default:
-			commitHash, commitTime, err := latestCommit(&name, repository, branch.Hash)
-			if err != nil {
-				return err
-			}
 			file, err := tree.TreeEntryFile(&entry)
 			if err != nil {
 				return err
 			}
+
 			threadGroup.Go(func() error {
 				var fileBuffer bytes.Buffer
 
 				path := filepath.Join(treeDir, name+".html")
-				skip, err := isSkipWrite(path, commitTime)
-
-				if err != nil {
-					return err
-				}
-				if skip {
-					return nil
-				}
-
 				root := relRootFromPath(path)
 				fileBase := BaseData{
 					Title:     name,
@@ -300,7 +302,7 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 					Home:      repositoryName,
 					Root:      root,
 					Nav: NavData{
-						Commit: fmt.Sprintf("%s", commitHash),
+						Commit: "",
 						Branch: branchName,
 					},
 				}
