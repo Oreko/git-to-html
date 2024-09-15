@@ -11,13 +11,48 @@ import (
 	"github.com/oreko/git-to-html/views"
 )
 
-func checkIfError(err error) {
+func checkIfError(err error) int {
 	if err == nil {
-		return
+		return 0
 	}
 
-	fmt.Fprintf(os.Stderr, "\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
-	os.Exit(1)
+	fmt.Fprintf(os.Stderr, "\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err.Error()))
+	return 1
+}
+
+func internalMain(repositoryPath string, repositoryName string) int {
+	repository, err := git.PlainOpen(repositoryPath)
+	if res := checkIfError(err); res != 0 {
+		return res
+	}
+
+	baseDir := "public"
+	err = os.MkdirAll(baseDir, 0755)
+	if res := checkIfError(err); res != 0 {
+		return res
+	}
+
+	err = views.WriteCommits(repository, repositoryName, baseDir)
+	if res := checkIfError(err); res != 0 {
+		return res
+	}
+
+	branchIter, err := repository.Branches()
+	checkIfError(err)
+	defer branchIter.Close()
+	err = branchIter.ForEach(func(branch *plumbing.Reference) error {
+		return views.WriteBranch(branch, repository, repositoryName, baseDir)
+	})
+	if res := checkIfError(err); res != 0 {
+		return res
+	}
+
+	err = views.WriteRefs(repository, repositoryName, baseDir)
+	if res := checkIfError(err); res != 0 {
+		return res
+	}
+
+	return 0
 }
 
 func main() {
@@ -27,30 +62,5 @@ func main() {
 		fmt.Fprintf(os.Stdout, "Usage: %s repository_path repository_name\n", filepath.Base(execPath))
 		os.Exit(1)
 	}
-
-	repositoryPath := os.Args[1]
-	repository, err := git.PlainOpen(repositoryPath)
-	checkIfError(err)
-
-	repositoryName := os.Args[2]
-
-	baseDir := "public"
-	err = os.MkdirAll(baseDir, 0755)
-	checkIfError(err)
-
-	err = views.WriteCommits(repository, repositoryName, baseDir)
-	checkIfError(err)
-
-	branchIter, err := repository.Branches()
-	checkIfError(err)
-	defer branchIter.Close()
-	err = branchIter.ForEach(func(branch *plumbing.Reference) error {
-		return views.WriteBranch(branch, repository, repositoryName, baseDir)
-	})
-	checkIfError(err)
-
-	err = views.WriteRefs(repository, repositoryName, baseDir)
-	checkIfError(err)
-
-	os.Exit(0)
+	os.Exit(internalMain(os.Args[1], os.Args[2]))
 }
