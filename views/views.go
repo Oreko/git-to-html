@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	git "github.com/go-git/go-git/v5"
@@ -376,7 +377,7 @@ func WriteRefs(repository *git.Repository, repositoryName string, baseDir string
 	}
 	defer tagIter.Close()
 
-	tags := make([]TagData, 0)
+	tags := make(TagDataSlice, 0)
 	err = tagIter.ForEach(func(tag *plumbing.Reference) error {
 		var data TagData
 		data.fromRefSwitch(tag, repository)
@@ -386,6 +387,7 @@ func WriteRefs(repository *git.Repository, repositoryName string, baseDir string
 	if err != nil {
 		return err
 	}
+	sort.Sort(sort.Reverse(tags))
 
 	root := relRootFromPath(refsPath)
 	refBase := BaseData{

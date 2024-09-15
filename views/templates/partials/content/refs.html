@@ -39,17 +39,15 @@
 	<td>
 	  {{ printf "%.*s" 50 .Head }}
 	</td>
+	{{ else -}}
+	<td></td>
+	{{- end }}
 	<td>
 	  {{ .Tagger }}
 	</td>
 	<td>
 	  {{ .Date.Format "January 02, 2006" }}
 	</td>
-	{{ else -}}
-	<td></td>
-	<td></td>
-	<td></td>
-	{{- end }}
       </tr>
       {{- end }}
     </tbody>

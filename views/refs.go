@@ -31,6 +31,11 @@ type TagData struct {
 	Tagger      string
 	Date        time.Time
 }
+type TagDataSlice []TagData
+
+func (a TagDataSlice) Len() int           { return len(a) }
+func (a TagDataSlice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a TagDataSlice) Less(i, j int) bool { return a[i].Date.Before(a[j].Date) }
 
 type ShortRef struct {
 	Name string
@@ -74,13 +79,18 @@ func (data *TagData) fromTag(tag *object.Tag) {
 	data.Date = tag.Tagger.When
 }
 
-func (data *TagData) fromReference(ref *plumbing.Reference) {
+func (data *TagData) fromReference(ref *plumbing.Reference, repo *git.Repository) error {
+	commit, err := repo.CommitObject(ref.Hash())
+	if err != nil {
+		return err
+	}
 	data.Name = ref.Name().Short()
 	data.Target = ref.Hash()
 	data.IsAnnotated = false
 	data.Head = ""
-	data.Tagger = ""
-	data.Date = time.Time{}
+	data.Tagger = commit.Author.Name
+	data.Date = commit.Committer.When
+	return nil
 }
 
 func (data *TagData) fromRefSwitch(tag *plumbing.Reference, repo *git.Repository) error {
@@ -89,13 +99,12 @@ func (data *TagData) fromRefSwitch(tag *plumbing.Reference, repo *git.Repository
 	case nil: // This is an annotated tag
 		data.fromTag(obj)
 	case plumbing.ErrObjectNotFound:
-		data.fromReference(tag)
-		err = nil
+		err = data.fromReference(tag, repo)
 	}
 	return err
 }
 
-func generateRefs(branches *[]string, tags *[]TagData, data BaseData, buffer *bytes.Buffer) error {
+func generateRefs(branches *[]string, tags *TagDataSlice, data BaseData, buffer *bytes.Buffer) error {
 
 	partialsPath := filepath.Join("templates", "partials")
 	basePath := filepath.Join("templates", "base.html")
@@ -113,7 +122,7 @@ func generateRefs(branches *[]string, tags *[]TagData, data BaseData, buffer *by
 
 	err = refsTempl.Execute(buffer, struct {
 		Branches []string
-		Tags     []TagData
+		Tags     TagDataSlice
 		BaseData
 	}{
 		*branches,
