@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -20,7 +20,7 @@ func checkIfError(err error) int {
 	return 1
 }
 
-func internalMain(repositoryPath string, repositoryName string) int {
+func internalMain(repositoryPath string, repositoryName string, config views.Config) int {
 	repository, err := git.PlainOpen(repositoryPath)
 	if res := checkIfError(err); res != 0 {
 		return res
@@ -32,7 +32,7 @@ func internalMain(repositoryPath string, repositoryName string) int {
 		return res
 	}
 
-	err = views.WriteCommits(repository, repositoryName, baseDir)
+	err = views.WriteCommits(repository, repositoryName, baseDir, config)
 	if res := checkIfError(err); res != 0 {
 		return res
 	}
@@ -41,13 +41,13 @@ func internalMain(repositoryPath string, repositoryName string) int {
 	checkIfError(err)
 	defer branchIter.Close()
 	err = branchIter.ForEach(func(branch *plumbing.Reference) error {
-		return views.WriteBranch(branch, repository, repositoryName, baseDir)
+		return views.WriteBranch(branch, repository, repositoryName, baseDir, config)
 	})
 	if res := checkIfError(err); res != 0 {
 		return res
 	}
 
-	err = views.WriteRefs(repository, repositoryName, baseDir)
+	err = views.WriteRefs(repository, repositoryName, baseDir, config)
 	if res := checkIfError(err); res != 0 {
 		return res
 	}
@@ -56,11 +56,20 @@ func internalMain(repositoryPath string, repositoryName string) int {
 }
 
 func main() {
-	if len(os.Args) != 3 {
-		execPath, err := os.Executable()
-		checkIfError(err)
-		fmt.Fprintf(os.Stdout, "Usage: %s repository_path repository_name\n", filepath.Base(execPath))
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] repository_path repository_name\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+	var logLimit = flag.Uint("l", 0, "Limit on the number of commits to render in the log with 0 giving no limit (default 0)")
+	var stylePath = flag.String("s", "../static/styles.css", "Relative path from public to look for styles")
+	flag.Parse()
+
+	config := views.Config{*logLimit, *stylePath}
+
+	if flag.NArg() != 2 {
+		flag.Usage()
 		os.Exit(1)
 	}
-	os.Exit(internalMain(os.Args[1], os.Args[2]))
+	args := flag.Args()
+	os.Exit(internalMain(args[0], args[1], config))
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"io"
 	"path/filepath"
 	"strings"
 	"time"
@@ -175,12 +176,28 @@ func (data *BlobData) fromFile(file *object.File) error {
 	return nil
 }
 
-func (data *LogData) fromBranchAndRefs(top *object.Commit, refs map[plumbing.Hash][]ShortRef) error {
+func (data *LogData) fromBranchAndRefs(top *object.Commit, refs map[plumbing.Hash][]ShortRef, logLimit uint) error {
 	commitIter := object.NewCommitIterCTime(top, nil, nil)
 	defer commitIter.Close()
+	var commitCount uint = 0
+	if logLimit == 0 {
+		// Since we check equality when we break, this will function as no limit
+		commitCount = 1
+	}
 
 	// We just point to the commits here since we will generate all the commit pages at the repo level.
-	err := commitIter.ForEach(func(commit *object.Commit) error {
+	for {
+		if commitCount == logLimit {
+			break
+		} else {
+			commitCount = commitCount + 1
+		}
+		commit, err := commitIter.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		} else if err != nil {
+			return err
+		}
 		message := strings.Split(commit.Message, "\n\n")[0]
 		logEntry := LogCommit{
 			Hash:    commit.Hash,
@@ -201,9 +218,8 @@ func (data *LogData) fromBranchAndRefs(top *object.Commit, refs map[plumbing.Has
 			logEntry.Stats.Deletions += stat.Deletion
 		}
 		data.Commits = append(data.Commits, logEntry)
-		return nil
-	})
-	return err
+	}
+	return nil
 }
 
 func getSubmoduleNameUrlMap(branch *object.Commit, repository *git.Repository) (map[string]string, error) {
@@ -339,9 +355,9 @@ func generateIndex(branch *object.Commit, submoduleMap map[string]string, treePr
 	return err
 }
 
-func generateLog(branch *object.Commit, refs map[plumbing.Hash][]ShortRef, base BaseData, buffer *bytes.Buffer) error {
+func generateLog(branch *object.Commit, refs map[plumbing.Hash][]ShortRef, base BaseData, buffer *bytes.Buffer, logLimit uint) error {
 	var logData LogData
-	logData.fromBranchAndRefs(branch, refs)
+	logData.fromBranchAndRefs(branch, refs, logLimit)
 
 	partialsPath := filepath.Join("templates", "partials")
 	basePath := filepath.Join("templates", "base.html")

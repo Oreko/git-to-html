@@ -21,6 +21,11 @@ import (
 //go:embed templates templates/partials templates/partials/content
 var templates embed.FS
 
+type Config struct {
+	LogLimit  uint
+	StylePath string
+}
+
 type BaseData struct {
 	Title       string
 	Home        string

@@ -17,7 +17,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func WriteCommits(repository *git.Repository, repositoryName string, baseDir string) error {
+func WriteCommits(repository *git.Repository, repositoryName string, baseDir string, config Config) error {
 	commitDir := filepath.Join(baseDir, "c")
 	err := os.MkdirAll(commitDir, 0755)
 	if err != nil {
@@ -101,7 +101,7 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 		root := relRootFromPath(commitPath)
 		commitBase := BaseData{
 			Title:     fmt.Sprintf("%s", commit.Hash),
-			StylePath: root + "..",
+			StylePath: root + config.StylePath,
 			Home:      repositoryName,
 			Root:      root,
 			Nav: NavData{
@@ -121,14 +121,14 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 	return err
 }
 
-func WriteIndex(branch *object.Commit, repository *git.Repository, repositoryName string, hash plumbing.Hash, branchDir string, branchName string, treePrefix string) error {
+func WriteIndex(branch *object.Commit, repository *git.Repository, repositoryName string, hash plumbing.Hash, branchDir string, branchName string, treePrefix string, config Config) error {
 	var branchBuffer bytes.Buffer
 	branchPath := filepath.Join(branchDir, "index.html")
 
 	root := relRootFromPath(branchPath)
 	branchBase := BaseData{
 		Title:     branchName,
-		StylePath: root + "..",
+		StylePath: root + config.StylePath,
 		Home:      repositoryName,
 		Root:      root,
 		Nav: NavData{
@@ -154,7 +154,7 @@ func WriteIndex(branch *object.Commit, repository *git.Repository, repositoryNam
 	return nil
 }
 
-func WriteLog(branch *object.Commit, repository *git.Repository, repositoryName string, hash plumbing.Hash, branchDir string, branchName string) error {
+func WriteLog(branch *object.Commit, repository *git.Repository, repositoryName string, hash plumbing.Hash, branchDir string, branchName string, config Config) error {
 	var logBuffer bytes.Buffer
 	logPath := filepath.Join(branchDir, "log.html")
 	skip, err := isSkipWrite(logPath, branch.Committer.When)
@@ -168,7 +168,7 @@ func WriteLog(branch *object.Commit, repository *git.Repository, repositoryName 
 	root := relRootFromPath(logPath)
 	logBase := BaseData{
 		Title:     fmt.Sprintf("%s - log", branchName),
-		StylePath: root + "..",
+		StylePath: root + config.StylePath,
 		Home:      repositoryName,
 		Root:      root,
 		Nav: NavData{
@@ -209,7 +209,7 @@ func WriteLog(branch *object.Commit, repository *git.Repository, repositoryName 
 		return err
 	}
 
-	err = generateLog(branch, refs, logBase, &logBuffer)
+	err = generateLog(branch, refs, logBase, &logBuffer, config.LogLimit)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func WriteLog(branch *object.Commit, repository *git.Repository, repositoryName 
 	return nil
 }
 
-func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName string, treeDir string, branchName string) error {
+func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName string, treeDir string, branchName string, config Config) error {
 	// Generate the pages for each file/dir in the branch
 	tree, err := branch.Tree()
 	if err != nil {
@@ -265,7 +265,7 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 			var treeBuffer bytes.Buffer
 			treeBase := BaseData{
 				Title:     name,
-				StylePath: root + "..",
+				StylePath: root + config.StylePath,
 				Home:      repositoryName,
 				Root:      root,
 				Nav: NavData{
@@ -299,7 +299,7 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 				root := relRootFromPath(path)
 				fileBase := BaseData{
 					Title:     name,
-					StylePath: root + "..",
+					StylePath: root + config.StylePath,
 					Home:      repositoryName,
 					Root:      root,
 					Nav: NavData{
@@ -322,7 +322,7 @@ func WriteTree(branch *object.Commit, repository *git.Repository, repositoryName
 	return threadGroup.Wait()
 }
 
-func WriteBranch(branch *plumbing.Reference, repository *git.Repository, repositoryName string, baseDir string) error {
+func WriteBranch(branch *plumbing.Reference, repository *git.Repository, repositoryName string, baseDir string, config Config) error {
 	const treePrefix = "t"
 
 	branchName := filepath.Base(string(branch.Name()))
@@ -338,17 +338,17 @@ func WriteBranch(branch *plumbing.Reference, repository *git.Repository, reposit
 		return err
 	}
 
-	err = WriteIndex(commit, repository, repositoryName, branch.Hash(), branchDir, branchName, treePrefix)
+	err = WriteIndex(commit, repository, repositoryName, branch.Hash(), branchDir, branchName, treePrefix, config)
 	if err != nil {
 		return err
 	}
 
-	err = WriteLog(commit, repository, repositoryName, branch.Hash(), branchDir, branchName)
+	err = WriteLog(commit, repository, repositoryName, branch.Hash(), branchDir, branchName, config)
 	if err != nil {
 		return err
 	}
 
-	err = WriteTree(commit, repository, repositoryName, treeDir, branchName)
+	err = WriteTree(commit, repository, repositoryName, treeDir, branchName, config)
 	if err != nil {
 		return err
 	}
@@ -356,7 +356,7 @@ func WriteBranch(branch *plumbing.Reference, repository *git.Repository, reposit
 	return nil
 }
 
-func WriteRefs(repository *git.Repository, repositoryName string, baseDir string) error {
+func WriteRefs(repository *git.Repository, repositoryName string, baseDir string, config Config) error {
 	refsPath := filepath.Join(baseDir, "refs.html")
 
 	branchIter, err := repository.Branches()
@@ -392,7 +392,7 @@ func WriteRefs(repository *git.Repository, repositoryName string, baseDir string
 	root := relRootFromPath(refsPath)
 	refBase := BaseData{
 		Title:     "References",
-		StylePath: root + "..",
+		StylePath: root + config.StylePath,
 		Home:      repositoryName,
 		Root:      root,
 		Nav: NavData{
