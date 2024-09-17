@@ -52,9 +52,12 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 		if err != nil {
 			return err
 		}
-		_ = fileIter.ForEach(func(file *object.File) error {
+		err = fileIter.ForEach(func(file *object.File) error {
 			var blobData BlobData
-			blobData.fromFile(file)
+			err := blobData.fromFile(file)
+			if err != nil {
+				return err
+			}
 			noteData := NoteData{
 				Reference: string(note.Name()),
 				Hash:      commit.Hash,
@@ -71,7 +74,7 @@ func WriteCommits(repository *git.Repository, repositoryName string, baseDir str
 			return nil
 		})
 
-		return nil
+		return err
 	})
 	if err != nil {
 		return err

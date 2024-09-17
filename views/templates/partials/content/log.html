@@ -18,7 +18,13 @@
 	  {{ .Date.Format "Jan 02, 2006" }}
 	</td>
 	<td>
-	  <a href="{{ printf "../c/%s.html" .Hash }}">{{- printf "%.*s" 25 .Message -}}</a>
+	  <a href="{{ printf "../c/%s.html" .Hash }}">
+	    {{- if eq .Message "" -}}
+	    Empty Commit Message
+	    {{- else -}}
+	    {{- printf "%.*s" 25 .Message -}}
+	    {{- end -}}
+	  </a>
 	</td>
 	<td class="hidesmallscreen">
 	  {{ .Author }}
